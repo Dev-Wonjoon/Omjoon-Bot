@@ -1,0 +1,25 @@
+{
+  "name": "omjoon-bot",
+  "version": "1.0.0",
+  "description": "Omjoon Discord bot.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dev-Wonjoon/Omjoon-Bot.git"
+  },
+  "author": "Dev-Wonjoon",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dev-Wonjoon/Omjoon-Bot/issues"
+  },
+  "homepage": "https://github.com/Dev-Wonjoon/Omjoon-Bot#readme",
+  "keywords": [],
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  }
+}
