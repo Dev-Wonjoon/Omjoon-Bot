@@ -15,7 +15,7 @@ async function playTrack(interaction, voiceChannel, track) {
             console.log('No new tracks added. Disconnecting now.');
             queue.delete();
           }
-        }, 600000);
+        }, 300000);
       });
     }
   }
