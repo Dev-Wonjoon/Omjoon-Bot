@@ -1,40 +1,49 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js')
 
-const data = new SlashCommandBuilder()
-    .setName('대기열')
-    .setDescription('현재 재생 중인 노래 목록을 보여줍니다.');
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('검색')
+        .setDescription('노래를 검색합니다.')
+        .addStringOption(option =>
+            option.setName('검색어')
+                .setDescription('검색할 노래 제목을 입력해주세요')
+                .setRequired(true)
+        ),
+    async execute(interaction) {
+        const query = interaction.options.getString('검색어');
+        const player = interaction.client.player;
+        const voiceChannel = interaction.member.voice.channel;
 
-async function execute(interaction) {
-    const player = interaction.client.player;
-    // 최신 discord-player(v7)에서는 player.nodes.get를 사용합니다.
-    const queue = player.nodes.get(interaction.guild);
+        if(!voiceChannel) {
+            return interaction.reply({content: '음성 채널에 참가해주세요.', ephemeral: true});
+        }
 
-    if (!queue || (!queue.currentTrack && queue.tracks.length === 0)) {
-        return interaction.reply('재생 중인 노래가 없습니다.');
-    }
+        await interaction.deferReply();
 
-    const embed = new EmbedBuilder()
-        .setTitle('현재 재생 중인 노래 목록')
-        .setColor('Random');
+        try {
+            const result = await player.search(query, {
+                requestedBy: interaction.user
+            });
 
-    let description = '';
+            if(!result || !result.tracks.length) {
+                return interaction.followUp('검색 결과가 없습니다.');
+            }
+            const track = result.tracks[0];
+            const queue = player.nodes.create(interaction.guild, {
+                metadata: {
+                    channel: interaction.channel
+                }
+            });
 
-    if (queue.currentTrack) {
-        description += `**현재 재생 중:** [${queue.currentTrack.title}](${queue.currentTrack.url})\n\n`;
-    }
+            if(!queue.connection) {
+                await queue.connect(voiceChannel);
+            }
+            queue.play(track);
 
-    if (queue.tracks.length > 0) {
-        description += '**대기열:**\n';
-        queue.tracks.forEach((track, index) => {
-            description += `**${index + 1}.** [${track.title}](${track.url})\n`;
-        });
-    } else {
-        description += '대기열이 비어있습니다.';
-    }
-
-    embed.setDescription(description);
-
-    return interaction.reply({ embeds: [embed] });
-}
-
-module.exports = { data, execute };
+            return interaction.followUp(`재생 중: **${track.title}**`);
+        } catch(error) {
+            console.error(error);
+            return interaction.followUp('노래를 검색하는 도중 오류가 발생했습니다.');
+        }
+    },
+};
