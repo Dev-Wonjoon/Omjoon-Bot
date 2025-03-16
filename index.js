@@ -2,10 +2,13 @@ const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const fs = require('node:fs')
 const path = require('node:path')
 const { token } = require('./config.json');
+const { Player } = require('discord-player');
+const { YoutubeiExtractor } = require('discord-player-youtubei');
 
 
 const client = new Client({ intents: [
-    GatewayIntentBits.Guilds
+    GatewayIntentBits.Guilds,
+	GatewayIntentBits.GuildVoiceStates,
 ] });
 
 client.commands = new Collection();
@@ -40,5 +43,8 @@ for (const file of eventFiles) {
 		client.on(event.name, (...args) => event.execute(...args));
 	}
 }
+
+client.player = new Player(client);
+client.player.extractors.register(YoutubeiExtractor, {});
 
 client.login(token);
