@@ -18,7 +18,7 @@ client.player = new Player(client, {
 	leaveOnEmpty: false,
 	leaveOnEnd: false,
 	leaveOnStop: false,
-	connectionTimeout: 300000,
+	probeTimeout: 300000,
 });
 
 const foldersPath = path.join(__dirname, 'commands');

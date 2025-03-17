@@ -7,32 +7,28 @@ const data = new SlashCommandBuilder()
 
 async function execute(interaction) {
     const player = interaction.client.player;
-    const queue = useQueue(interaction.guild.id);
+    const queue = useQueue(interaction.guild);
 
-    if(!queue || !queue.current) {
-        return interaction.reply({ content: '현재 재생 중인 음악이 없습니다.'});
+    if(!queue || !queue.currentTrack) {
+        return interaction.reply(
+            '현재 재생중인 노래가 없습니다.'
+        )
     }
 
-    const randomColor = Math.floor(Math.random() * 0x1000000);
-    const embed = new EmbedBuilder()
-        .setTitle('현재 음악 대기열')
-        .setDescription(`**${current.title}** - ${current.author}\n(${current.url})`)
-        .setColor(randomColor);
-    
+    const currentTrack = queue.currentTrack;
+    const upcomingTracks = queue.tracks.toArray();
 
-    if(tracks.length > 0) {
-        const queueList = tracks.slice(0, 10).map((track, index) => 
-            `${index + 1}. **${track.title}** - ${track.author}`
-          ).join('\n');
-        embed.addFields({ name: '대기열', value: queueList });
-    } else {
-        embed.addFields({ name: '다음 대기열', value: '대기열에 추가된 노래가 없습니다.' });
-    }
+    const message = [
+        `**현재 재생중인 곡:** ${currentTrack.title} - ${currentTrack.author}`,
+        '',
+        upcomingTracks.length > 0 ? '대기중인 곡:' : '대기중인 곡이 없습니다.',
+        ...upcomingTracks.map((track, index) => `${index + 1}. ${track.title} - ${track.author}`)
+    ].join('\n');
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.reply(message);
 
 }
 
-module.exports = { data, execute};
+module.exports = { data, execute };
 
 
