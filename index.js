@@ -15,10 +15,15 @@ const client = new Client({ intents: [
 
 client.commands = new Collection();
 client.player = new Player(client, {
-	leaveOnEmpty: false,
-	leaveOnEnd: false,
-	leaveOnStop: false,
-	probeTimeout: 300000,
+	nodeOptions: {
+		bufferingTimeout: 15000,
+		leaveOnStop: true,
+		leaveOnStopCooldown: 180000,
+		leaveOnEnd: true,
+		leaveOnEndCooldown: 180000,
+		leaveOnEmpty: true,
+		leaveOnEmptyCooldown: 5000,
+	},
 });
 
 const foldersPath = path.join(__dirname, 'commands');
