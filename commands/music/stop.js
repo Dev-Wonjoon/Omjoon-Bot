@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 const data = new SlashCommandBuilder()
   .setName('정지')
@@ -9,7 +9,7 @@ async function execute(interaction) {
   const queue = player.nodes.get(interaction.guild);
   
   if (!queue || !queue.currentTrack) {
-    return interaction.reply({ content: '현재 재생 중인 노래가 없습니다.', ephemeral: true });
+    return interaction.reply({ content: '현재 재생 중인 노래가 없습니다.', flags: MessageFlags.Ephemeral });
   }
   
   // 현재 재생 중인 곡을 중지합니다.
