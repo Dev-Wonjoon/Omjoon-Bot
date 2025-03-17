@@ -20,3 +20,5 @@ async function execute(interaction) {
 
     return interaction.reply(`${queue.tracks.size}개의 노래 순서를 바꿨습니다.`);
 }
+
+module.exports = { data, execute };

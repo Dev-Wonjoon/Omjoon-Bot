@@ -19,7 +19,7 @@ async function execute(interaction) {
     const upcomingTracks = queue.tracks.toArray();
 
     const message = [
-        `**현재 재생중인 곡:** ${currentTrack.title}`,
+        `**현재 재생중인 곡:** ${currentTrack.title} ${currentTrack.url}`,
         '',
         upcomingTracks.length > 0 ? '대기중인 곡:' : '대기중인 곡이 없습니다.',
         ...upcomingTracks.map((track, index) => `${index + 1}. ${track.title} - ${track.author}`)
