@@ -8,7 +8,7 @@ const data = new SlashCommandBuilder()
 
 async function execute(interaction) {
     const queue = useQueue(interaction.guild);
-    const connection = getVoiceConnection(interaction.guild.id);
+    const connection = interaction.member.voice.channel;
 
     if(!connection) {
         return interaction.reply({ content: "현재 음성 채널에 접속되어 있지 않습니다.", flags: MessageFlags.Ephemeral});
