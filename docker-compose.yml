@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  omjoonbot:
+    image: omjoonbot:latest
+    volumes:
+      - ./:/app
+    command: ["node", "./index.js"]
+    restart: on-failure:5

@@ -4,12 +4,14 @@ const path = require('node:path');
 
 function registerHandlers(client) {
     client.commands = new Collection();
-    const commandPath = path.join(__dirname, 'commands');
-    const commandDir = fs.readdirSync(commandPath);
+    const commandsPath = path.join(__dirname, 'commands');
+    const commandDirs = fs.readdirSync(commandsPath);
 
-    for(const dir of commandDir) {
-        const dirPath = path.join(commandDir, dir);
-        const commandFiles = fs.readFileSync(commandDir).filter(file => file.endsWith('.js'));
+    for(const dir of commandDirs) {
+        const dirPath = path.join(commandsPath, dir);
+        if(!fs.lstatSync(dirPath).isDirectory()) continue;
+
+        const commandFiles = fs.readdirSync(dirPath).filter(file => file.endsWith('.js'));
 
         for(const file of commandFiles) {
             const filepath = path.join(dirPath, file);

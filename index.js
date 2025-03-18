@@ -20,7 +20,10 @@ const player = new Player(client, {
 		leaveOnEmpty: true,
 		leaveOnEmptyCooldown: 5000,
 	}
-})
+});
+
+client.player = player;
+useMainPlayer(player);
 
 registerHandlers(client);
 
