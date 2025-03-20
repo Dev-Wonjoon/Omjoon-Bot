@@ -23,6 +23,9 @@ const player = new Player(client, {
 });
 
 client.player = player;
+client.player.on('playerError', (queue, error) => {
+	console.error(`[${queue.guild.name}] Error emitted from the player: ${error.message}`);
+});
 useMainPlayer(player);
 
 registerHandlers(client);

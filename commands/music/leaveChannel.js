@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { useQueue } = require('discord-player');
-const { getVoiceConnection } = require('@discordjs/voice');
 
 const data = new SlashCommandBuilder()
     .setName('나가기')
@@ -16,6 +15,8 @@ async function execute(interaction) {
 
     connection.destroy();
     queue.delete();
+
+    return interaction.reply({ content: "음성 채널에서 나갔습니다.", flags: MessageFlags.Ephemeral});
     
 }
 

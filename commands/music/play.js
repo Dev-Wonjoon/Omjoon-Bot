@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, Message, MessageFlags } = require('discord.js');
 const { sendSelectionMenu } = require('../../helpers/selectTrack');
 const { playTrack } = require('../../helpers/playerTrack');
 
@@ -15,7 +15,7 @@ module.exports = {
     const query = interaction.options.getString('검색어');
     const voiceChannel = interaction.member.voice.channel;
     if (!voiceChannel)
-      return interaction.reply({ content: "먼저 음성 채널에 참가해주세요.", ephemeral: true });
+      return interaction.reply({ content: "먼저 음성 채널에 참가해주세요.", flags: MessageFlags.EPHEMERAL });
 
     await interaction.deferReply();
     const player = interaction.client.player;
