@@ -1,12 +1,13 @@
 const axios = require('axios');
 
-const API_BASE_URL = 'http://192.168.172:8080';
+const API_BASE_URL = 'http://192.168.1.172:8080';
 
 module.exports = {
-    async getPlaylist(discordId) {
+    async getPlaylist(playlistName, discordId) {
         try {
-            const response = await axios.get(`${API_BASE_URL}/omjoon/api/playlist/${discordId}`, {
+            const response = await axios.get(`${API_BASE_URL}/omjoon/api/playlist/get`, {
                 params: {
+                    playlistName,
                     discordId,
                 },
             });
