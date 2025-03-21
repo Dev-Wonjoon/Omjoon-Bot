@@ -18,14 +18,12 @@ const player = new Player(client, {
 		leaveOnEnd: true,
 		leaveOnEndCooldown: 180000,
 		leaveOnEmpty: true,
-		leaveOnEmptyCooldown: 5000,
+		leaveOnEmptyCooldown: 120000,
 	}
 });
 
 client.player = player;
-client.player.on('playerError', (queue, error) => {
-	console.error(`[${queue.guild.name}] Error emitted from the player: ${error.message}`);
-});
+
 useMainPlayer(player);
 
 registerHandlers(client);
