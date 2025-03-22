@@ -1,6 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { createPlaylist } = require('../../api/playlist/createPlaylist');
-const { getAllPlaylist } = require('../../api/playlist/getAllPlaylist');
+const createCommand = require('./createCommand');
+const listCommand = require('./getListCommand');
+const getCommand = require('./getCommand');
+const selectCommand = require('./selectCommand');
+// const deleteCommand = require('./deleteCommand');
+const addMusicToPlaylist = require('./musicAddCommand');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -43,29 +47,53 @@ module.exports = {
             .setDescription('조회할 플레이리스트 이름을 입력해주세요.')
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommend =>
+        subcommend
+        .setName('노래추가')
+        .setDescription('해당 플레이리스트에 노래를 추가합니다.')
+        .addStringOption(option =>
+            option
+            .setName('플레이리스트')
+            .setDescription('노래를 추가할 플레이리스트 이름을 입력해주세요.')
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+            option
+            .setName('노래제목')
+            .setDescription('추가할 노래 제목을 입력해주세요.')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommend =>
+        subcommend
+       .setName('선택')
+       .setDescription('플레이리스트를 선택합니다.')
     ),
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
-        const discordId = parseInt(interaction.user.id);
 
         switch (subcommand) {
             case '생성':
-                const playlistName = interaction.options.getString('이름');
-                await createPlaylist(discordId, playlistName);
-                return interaction.reply({content: `플레이리스트 **${playlistName}** 을(를) 생성했습니다.`});
+                await createCommand(interaction);
+                break;
             case '목록':
-                try {
-                    const playlists = await getAllPlaylist(discordId);
-                    if (!playlists || playlists.length === 0) {
-                        return interaction.reply({content: '생성된 플레이리스트가 없습니다.'});
-                    }
-
-                    const playlistNames = playlists.map(playlist =>`${playlist.playlistName}`).join('\n');
-                    return interaction.reply({content: `생성된 플레이리스트 목록입니다.\n${playlistNames}`});
-                } catch (error) {
-                    console.error('백엔드 API 호출 중 오류가 발생했습니다.', error);
-                    return interaction.reply({content: '플레이리스트 목록을 불러오는 중 오류가 발생했습니다.'});
-                }
+                await listCommand(interaction);
+                break;
+            // case '삭제':
+            //     await deleteCommand(interaction);
+            //     break;
+            case '조회':
+                await getCommand(interaction);
+                break;
+            case '노래추가':
+                await addMusicToPlaylist(interaction);
+                break;
+            case '선택':
+                await selectCommand(interaction);
+                break;
+            default:
+                return interaction.reply('알 수 없는 명령어입니다.');
         }
     }
 }

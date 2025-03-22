@@ -1,6 +1,7 @@
 const axios = require('axios');
+const { serverHost } = require('../../config.json');
 
-const API_BASE_URL = 'http://192.168.1.172:8080';
+const API_BASE_URL = serverHost;
 
 async function getAllPlaylist(discordId) {
     try {
