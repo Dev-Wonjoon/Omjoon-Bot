@@ -1,4 +1,4 @@
-const { getAllPlaylist } = require('../api/playlist/getAllPlaylist');
+const { getAllPlaylist } = require('../../api/playlist/getAllPlaylist');
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = async function(interaction) {

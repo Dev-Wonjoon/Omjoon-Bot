@@ -1,10 +1,10 @@
-const { getPlaylist } = require('../api/playlist/getPlaylist');
+const { getPlaylist } = require('../../api/playlist/getPlaylist');
 
 module.exports = async function(interaction) {
     const discordId = parseInt(interaction.user.id);
     try {
         const playlistName = interaction.options.getString('이름');
-        const playlist = await getPlaylist(playlistName, discordId);
+        const playlist = await getPlaylist(discordId, playlistName);
         if(!playlist) {
             return interaction.reply('해당 플레이리스트가 없습니다.');
         }

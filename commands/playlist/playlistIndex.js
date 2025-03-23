@@ -1,10 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
-const createCommand = require('./createCommand');
-const listCommand = require('./getListCommand');
-const getCommand = require('./getCommand');
-const selectCommand = require('./selectCommand');
-// const deleteCommand = require('./deleteCommand');
-const addMusicToPlaylist = require('./musicAddCommand');
+const createCommand = require('../../helpers/playlist/createCommand');
+const listCommand = require('../../helpers/playlist/getListCommand');
+const getCommand = require('../../helpers/playlist/getCommand');
+const selectCommand = require('../../helpers/playlist/selectCommand');
+const deleteCommand = require('../../helpers/playlist/deleteCommand');
+const addMusicToPlaylist = require('../../helpers/playlist/musicAddCommand');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,12 +30,6 @@ module.exports = {
         subcommend
         .setName('삭제')
         .setDescription('플레이리스트를 삭제합니다.')
-        .addStringOption(option =>
-            option
-            .setName('이름')
-            .setDescription('삭제할 플레이리스트 이름을 입력해주세요.')
-            .setRequired(true)
-        )
     )
     .addSubcommand(subcommend =>
         subcommend
@@ -80,9 +74,9 @@ module.exports = {
             case '목록':
                 await listCommand(interaction);
                 break;
-            // case '삭제':
-            //     await deleteCommand(interaction);
-            //     break;
+            case '삭제':
+                await deleteCommand(interaction);
+                break;
             case '조회':
                 await getCommand(interaction);
                 break;

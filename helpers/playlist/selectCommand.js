@@ -1,5 +1,5 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, ComponentType, MessageFlags,  } = require('discord.js');
-const { getAllPlaylist } = require('../api/playlist/getAllPlaylist');
+const { getAllPlaylist } = require('../../api/playlist/getAllPlaylist');
 
 module.exports = async function(interaction) {
     const discordId = parseInt(interaction.user.id);

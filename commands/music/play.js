@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, Message, MessageFlags } = require('discord.js');
-const { sendSelectionMenu } = require('../../helpers/selectTrack');
-const { playTrack } = require('../../helpers/playerTrack');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
+const { sendSelectionMenu } = require('../../helpers/playlist/selectTrack');
+const { playTrack } = require('../../helpers/playlist/playerTrack');
 
 module.exports = {
   data: new SlashCommandBuilder()

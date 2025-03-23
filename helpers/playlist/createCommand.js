@@ -1,4 +1,4 @@
-const { createPlaylist } = require('../api/playlist/createPlaylist');
+const { createPlaylist } = require('../../api/playlist/createPlaylist');
 
 module.exports = async function(interaction) {
     const discordId = interaction.user.id;
