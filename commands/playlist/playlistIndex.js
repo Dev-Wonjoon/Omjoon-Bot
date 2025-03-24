@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const createCommand = require('../../helpers/playlist/createCommand');
 const listCommand = require('../../helpers/playlist/getListCommand');
 const getCommand = require('../../helpers/playlist/getCommand');
-const selectCommand = require('../../helpers/playlist/selectCommand');
+const selectCommand = require('../../helpers/playlist/selectPlaylistCommand');
 const deleteCommand = require('../../helpers/playlist/deleteCommand');
 const addMusicToPlaylist = require('../../helpers/playlist/musicAddCommand');
 
@@ -61,7 +61,7 @@ module.exports = {
     )
     .addSubcommand(subcommend =>
         subcommend
-       .setName('선택')
+       .setName('재생')
        .setDescription('플레이리스트를 선택합니다.')
     ),
     async execute(interaction) {
@@ -83,7 +83,7 @@ module.exports = {
             case '노래추가':
                 await addMusicToPlaylist(interaction);
                 break;
-            case '선택':
+            case '재생':
                 await selectCommand(interaction);
                 break;
             default:

@@ -4,7 +4,7 @@ const { serverHost } = require('../../config.json');
 const API_BASE_URL = serverHost;
 
 module.exports = {
-    async getPlaylist(discordId, playlistId) {
+    async getByPlaylistName(discordId, playlistId) {
         try {
             const response = await axios.get(`${API_BASE_URL}/omjoon/api/playlist/get`, {
                 params: {

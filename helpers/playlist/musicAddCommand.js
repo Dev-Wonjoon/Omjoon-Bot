@@ -1,5 +1,5 @@
 const { addMusicToPlaylist } = require('../../api/playlist/addMusicToPlaylist');
-const { getPlaylist } = require('../../api/playlist/getPlaylist');
+const { getByPlaylistName } = require('../../api/playlist/getByPlaylistName');
 const { sendSelectionMenu } = require('../../helpers/playlist/selectTrack');
 
 module.exports = async function(interaction) {
@@ -9,7 +9,7 @@ module.exports = async function(interaction) {
     
     let playlist;
     try {
-        playlist = await getPlaylist(discordId, playlistName);
+        playlist = await getByPlaylistName(discordId, playlistName);
         if (!playlist) {
             return interaction.reply({content: `플레이리스트 **${playlistName}** 이(가) 없습니다.`});
         }

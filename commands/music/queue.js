@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { useQueue } = require('discord-player');
 
 const data = new SlashCommandBuilder()
@@ -19,13 +19,13 @@ async function execute(interaction) {
     const upcomingTracks = queue.tracks.toArray();
 
     const message = [
-        `**현재 재생중인 곡:** ${currentTrack.title} - ${currentTrack.requestedBy.globalName}`,
+        `**현재 재생중인 곡:** ${currentTrack.title} - 요청자: ${currentTrack.requestedBy.globalName}`,
         '',
         upcomingTracks.length > 0 ? '대기중인 곡:' : '',
-        ...upcomingTracks.map((track, index) => `${index + 1}. ${track.requestedBy.globalName}`)
+        ...upcomingTracks.map((track, index) => `${index + 1}. ${track.title}  요청자: ${track.requestedBy.globalName}`)
     ].join('\n');
 
-    return interaction.reply(message);
+    return interaction.reply({message, flags: MessageFlags.Ephemeral});
 
 }
 
