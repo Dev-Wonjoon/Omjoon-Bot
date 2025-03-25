@@ -14,7 +14,7 @@ module.exports = {
             });
             return response.data;
         } catch (error) {
-            console.error('백엔드 API 호출 중 오류가 발생했습니다.', error);
+            console.error('백엔드 API 호출 중 오류가 발생했습니다.', error.message);
             throw error;
         }
     },

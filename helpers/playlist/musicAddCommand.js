@@ -2,6 +2,12 @@ const { MessageFlags } = require('discord-api-types/v10');
 const { addMusicToPlaylist } = require('../../api/playlist/addMusicToPlaylist');
 const { getByPlaylistName } = require('../../api/playlist/getByPlaylistName');
 const { sendSelectionMenu } = require('../../helpers/playlist/selectTrack');
+const ImmediateCommand = require('../ImmediateCommand');
+
+class MusicAddCommand extends ImmediateCommand {
+    
+}
+
 
 module.exports = async function(interaction) {
     const discordId = parseInt(interaction.user.id);

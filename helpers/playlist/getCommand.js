@@ -16,6 +16,9 @@ module.exports = async function(interaction) {
         return interaction.reply({ content: `해당 플레이리스트 **${playlistName}** 에는 다음 곡들이 있습니다.\n${tracksFormatted}`});
     } catch (error) {
         console.error('백엔드 API 호출 중 오류가 발생했습니다.', error);
+        if(error.response?.status === 404) {
+            return interaction.reply({content: `플레이리스트 **${playlistName}**이(가) 없습니다.`});
+        }
         return interaction.reply('플레이리스트 조회 중 오류가 발생했습니다.');
     }
 };

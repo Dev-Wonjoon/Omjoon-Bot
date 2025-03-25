@@ -1,18 +1,14 @@
-const axios = require('axios');
+const apiClient = require('../apiCall');
 const { serverHost } = require('../../config.json');
 
 const API_BASE_URL = serverHost;
 
 async function createPlaylist(discordId, playlistName) {
     try {
-        const payload = {
-            discordId: discordId,
-            playlistName: playlistName,
-        }
-    
+        const payload = { discordId: parseInt(discordId), playlistName: playlistName };
 
-        const response = await axios.post(`${API_BASE_URL}/omjoon/api/playlist/create`, payload, {headers: {'Content-Type': 'application/json'}});
-        return response.data;
+        const response = await apiClient.post('/omjoon/api/playlist/create', payload);
+        return response;
     } catch (error) {
         console.error('백엔드 API 호출 중 오류가 발생했습니다.', error);
         throw error;

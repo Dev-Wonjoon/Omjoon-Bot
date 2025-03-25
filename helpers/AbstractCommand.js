@@ -1,7 +1,7 @@
 const { MessageFlags } = require('discord.js');
 
 class AbstractCommand{
-    constractor(ephemeral = true) {
+    constructor(ephemeral = true) {
         this.ephemeral = ephemeral;
     }
 

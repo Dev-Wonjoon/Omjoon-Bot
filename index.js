@@ -4,24 +4,42 @@ const { Player, useMainPlayer } = require('discord-player');
 const { YoutubeiExtractor } = require('discord-player-youtubei');
 const { registerHandlers } = require('./registerHandler');
 
-const client = new Client({ intents: [
-	GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.Guilds,
-	GatewayIntentBits.GuildMessages,
-] });
+const container = require('./container');
+const apiClient = require('./api/apiCall');
 
-const player = new Player(client, {});
+container.register('token', () => token);
+container.register('apiClient', () => apiClient);
 
-client.player = player;
+container.register('client', () =>
+    new Client({ intents: [
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        ]
+    })
+);
 
-useMainPlayer(player);
+container.register('player', c => {
+    const client = c.resolve('client');
+    const player = new Player(client);
+    useMainPlayer(player);
+    player.extractors.register(YoutubeiExtractor);
+    return player
+})
 
-registerHandlers(client);
+container.register()
 
-client.player.extractors.register(YoutubeiExtractor, {});
+(async () => {
+    const client = container.resolve('client');
+    client.player = container.resolve('player');
 
-player.on('error', error => {
-    console.error(`플레이어 에러 발생: ${error.message}`);
-});
+    client.once('ready', () =>
+      console.log(`${client.user.tag} is Online`)  
+    );
 
-client.login(token);
+    client.on('interactionCreate', interaction =>
+        container.resolve('InteractionCreate').execute(interaction)
+    );
+
+    await client.login(container.resolve('token'));
+})();

@@ -1,8 +1,8 @@
-const AbstractCommand = require('./AbstractCommand');
 const { MessageFlags } = require('discord.js');
-
-class ImmediateCommand extends AbstractCommand {
+const AbstractCommand = require('./AbstractCommand');
+class ImmediateCommand extends AbstractCommand  {
     async execute(interaction) {
+
         try {
             const resultMessage = await this.run(interaction);
             await interaction.reply({
@@ -19,6 +19,8 @@ class ImmediateCommand extends AbstractCommand {
     }
 
     async run(interaction) {
-        
+        throw new Error('run() 메서드를 반드시 구현해야 합니다.');
     }
 }
+
+module.exports = ImmediateCommand;

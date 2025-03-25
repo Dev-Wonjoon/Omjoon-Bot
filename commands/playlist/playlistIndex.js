@@ -69,7 +69,7 @@ module.exports = {
 
         switch (subcommand) {
             case '생성':
-                await createCommand(interaction);
+                await createCommand.execute(interaction);
                 break;
             case '목록':
                 await listCommand(interaction);
