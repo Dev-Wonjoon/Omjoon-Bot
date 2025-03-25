@@ -1,11 +1,13 @@
 const axios = require('axios');
-const { serverHost } = require('../config.json');
+const { serverHost, apiRootUrl } = require('../config.json');
 
 const apiClient = axios.create({
-    baseURL: serverHost,
+    baseURL: `${serverHost}${apiRootUrl}`,
     headers: {
         'Content-Type': 'application/json'
-    }
+    },
+    timeout: 10000,
+    validateStatus: status => status < 500
 });
 
 apiClient.interceptors.response.use(

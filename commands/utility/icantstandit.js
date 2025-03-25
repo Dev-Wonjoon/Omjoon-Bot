@@ -1,10 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js')
+const UtilityCommand = require('./UtilityCommand');
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('못참겠다')
-        .setDescription('나 못 참겠다!!!!!!!!!!!!!!!'),
-    async execute(interaction) {
-        await interaction.reply('못 참겠다!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    },
-};
+module.exports = new UtilityCommand({
+    name: '못참겠다',
+    description: '나 못참겠다!!!!!!!!!!!',
+    replyMessage: '못참겠다!!!!!!!!!!!!!!!!!!!!!!!!!'
+});

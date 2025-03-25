@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const { token } = require('./config.json');
 const { Player, useMainPlayer } = require('discord-player');
 const { YoutubeiExtractor } = require('discord-player-youtubei');
@@ -7,6 +7,9 @@ const { registerHandlers } = require('./registerHandler');
 const container = require('./container');
 const apiClient = require('./api/apiCall');
 const InteractionCreate = require('./events/interactionCreate');
+const PlaylistService = require('./service/playlistService');
+const PlaylistRepository = require('./repository/music/playlistRepository');
+const UtilityCommand = require('./commands/utility/UtilityCommand');
 
 
 const asciiArt =
@@ -40,13 +43,19 @@ container.register('player', c => {
     return player
 })
 
-container.registerClass(InteractionCreate);
+container.register(UtilityCommand);
+
+container.register('InteractionCreate', InteractionCreate);
+container.registerClass(PlaylistService);
+container.registerClass(PlaylistRepository);
 
 (async () => {
     const client = container.resolve('client');
     client.player = container.resolve('player');
+    client.commands = new Collection();
 
     client.once('ready', () => {
+        console.clear();
         console.log(asciiArt);
         console.log(`${client.user.tag} is Online`)
     });
