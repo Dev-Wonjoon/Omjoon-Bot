@@ -6,6 +6,7 @@ const { registerHandlers } = require('./registerHandler');
 
 const container = require('./container');
 const apiClient = require('./api/apiCall');
+const InteractionCreate = require('./events/interactionCreate');
 
 container.register('token', () => token);
 container.register('apiClient', () => apiClient);
@@ -27,9 +28,9 @@ container.register('player', c => {
     return player
 })
 
-container.register()
+container.registerClass(InteractionCreate);
 
-(async () => {
+async () => {
     const client = container.resolve('client');
     client.player = container.resolve('player');
 
@@ -42,4 +43,4 @@ container.register()
     );
 
     await client.login(container.resolve('token'));
-})();
+};
