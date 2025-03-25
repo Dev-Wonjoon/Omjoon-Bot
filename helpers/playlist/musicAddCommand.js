@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord-api-types/v10');
 const { addMusicToPlaylist } = require('../../api/playlist/addMusicToPlaylist');
 const { getByPlaylistName } = require('../../api/playlist/getByPlaylistName');
 const { sendSelectionMenu } = require('../../helpers/playlist/selectTrack');
@@ -11,11 +12,11 @@ module.exports = async function(interaction) {
     try {
         playlist = await getByPlaylistName(discordId, playlistName);
         if (!playlist) {
-            return interaction.reply({content: `플레이리스트 **${playlistName}** 이(가) 없습니다.`});
+            return interaction.reply({content: `플레이리스트 **${playlistName}** 이(가) 없습니다.`, flags: MessageFlags.Ephemeral});
         }
     } catch (error) {
         console.error('백엔드 API 호출 중 오류가 발생했습니다.', error);
-        return interaction.reply({content: '플레이리스트 조회 중 오류가 발생했습니다.'});
+        return interaction.reply({content: '플레이리스트 조회 중 오류가 발생했습니다.', flags: MessageFlags.Ephemeral});
     }
 
     await interaction.deferReply();
@@ -25,11 +26,11 @@ module.exports = async function(interaction) {
     try {
         searchResult = await player.search(musicTitle, { requestedBy: interaction.user });
         if(searchResult.loadType === 'NO_MATCHES') {
-            return interaction.followUp({content: '검색 결과가 없습니다.'});
+            return interaction.followUp({content: '검색 결과가 없습니다.', flags: MessageFlags.Ephemeral});
         }
     } catch(error) {
         console.error('노래 검색 중 오류가 발생했습니다.', error);
-        return interaction.followUp({content: '노래 검색 중 오류가 발생했습니다.'});
+        return interaction.followUp({content: '노래 검색 중 오류가 발생했습니다.', flags: MessageFlags.Ephemeral});
     }
 
     const tracks = searchResult.tracks.slice(0, 5);

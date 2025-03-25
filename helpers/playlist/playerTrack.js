@@ -20,5 +20,5 @@ async function playTrack(interaction, voiceChannel, track) {
     }
   }
   
-  module.exports = { playTrack };
+module.exports = { playTrack };
   
