@@ -2,6 +2,8 @@ import { GatewayIntentBits, Client, Collection } from 'discord.js';
 import { Player, useMainPlayer } from 'discord-player';
 import { YoutubeiExtractor } from 'discord-player-youtubei';
 import config from './config.json';
+import { registerInteractionCreate } from './src/interactions/interactionCreate';
+import { loadCommands } from './src/utils/loadCommands';
 
 const client = new Client({
     intents: [
@@ -11,6 +13,8 @@ const client = new Client({
     ],
 });
 
+client.commands = new Collection();
+registerInteractionCreate(client);
 const asciiArt =
   "  ____            _                     ____        _   \n" +
   " / __ \\          (_)                   |  _ \\      | |  \n" +
@@ -22,19 +26,29 @@ const asciiArt =
   "              |__/                                     ";
 
 const player = new Player(client);
-
-useMainPlayer(player);
+client.player = player;
 
 player.extractors.register(YoutubeiExtractor, {});
 
 
 player.events.on('error', (error) => {
-    console.error(`discord player 에러 발생: ${error}`)
+    console.error(`[Player Error] ${error}`)
+});
+
+client.on('error', (error) => {
+    console.error('[Client Error]', error);
 });
 
 client.once('ready', () => {
     console.log(asciiArt);
-    console.log(`${client.user.tag} is Online.`);
+    if (client.user) {
+        console.log(`${client.user.tag} is Online.`);
+    } else {
+        console.error('Client user is null.');
+    }
 });
 
-client.login(config.token);
+(async () => {
+    await loadCommands(client);
+    await client.login(config.token);
+})();
