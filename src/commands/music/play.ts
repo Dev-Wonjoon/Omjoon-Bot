@@ -5,7 +5,7 @@ import {
     MessageFlags,
     GuildMember
 } from "discord.js"
-import { selectMenuPrompt } from "../../interactions/selectMenuPrompt";
+import { selectMenuPrompt } from "../../interactions/selectMenuPrompt.js";
 
 export const data = new SlashCommandBuilder()
     .setName('재생')

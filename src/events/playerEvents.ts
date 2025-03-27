@@ -6,6 +6,6 @@ player.events.on('error', (queue, error) => {
     console.error(`[PlayerError] ${error.message}`);
 });
 
-player.events.on('connectionError', (queue, error) => {
-    console.error(`[VoiceConnectionError] ${error.message}`);
+player.events.on('playerError', (queue, error) => {
+    console.error(`[PlayerError] ${error.message}`);
 });

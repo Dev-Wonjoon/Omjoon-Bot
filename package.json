@@ -30,7 +30,8 @@
     "ytdl-core": "^4.11.5"
   },
   "scripts": {
-    "start": "node index.ts"
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "author": "Dev-Wonjoon",
   "license": "MIT",

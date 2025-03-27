@@ -4,8 +4,8 @@ import {
     CacheType
 } from 'discord.js';
 
-import { playlistService } from '../../service/playlistService';
-import { playlistRepository } from '../../repository/playlistRepository';
+import { playlistService } from '../../service/playlistService.js';
+import { playlistRepository } from '../../repository/playlistRepository.js';
 
 export const data = new SlashCommandBuilder()
     .setName('플리')
@@ -25,5 +25,5 @@ export const data = new SlashCommandBuilder()
     );
 
 export async function execute(interaction: ChatInputCommandInteraction<CacheType>) {
-
+    
 }

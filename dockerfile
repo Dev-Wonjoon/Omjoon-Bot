@@ -5,9 +5,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y ffmpeg
 
 COPY package*.json ./
+COPY tsconfig.json ./
 
 RUN npm install
 
 COPY . .
 
-CMD ["node", "index.ts"]
+RUN npm run build
+
+CMD ["node", "./dist/index.js"]

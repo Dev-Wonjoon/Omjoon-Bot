@@ -1,9 +1,13 @@
 import { GatewayIntentBits, Client, Collection } from 'discord.js';
 import { Player, useMainPlayer } from 'discord-player';
 import { YoutubeiExtractor } from 'discord-player-youtubei';
-import config from './config.json';
-import { registerInteractionCreate } from './src/interactions/interactionCreate';
-import { loadCommands } from './src/utils/loadCommands';
+import dotenv from 'dotenv';
+import { registerInteractionCreate } from './interactions/interactionCreate.js';
+import { loadCommands } from './utils/loadCommands.js';
+
+dotenv.config();
+
+const TOKEN = process.env.DISCORD_TOKEN;
 
 const client = new Client({
     intents: [
@@ -50,5 +54,5 @@ client.once('ready', () => {
 
 (async () => {
     await loadCommands(client);
-    await client.login(config.token);
+    await client.login(TOKEN);
 })();

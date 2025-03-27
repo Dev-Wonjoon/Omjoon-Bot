@@ -1,9 +1,13 @@
 import { REST, Routes } from "discord.js";
-import config from "./config.json";
+import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from "url";
 import { getAllCommandfiles } from "./src/utils/getAllCommands";
+
+dotenv.config();
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,14 +28,20 @@ for (const file of commandFiles) {
     }
 }
 
-const rest = new REST({ version: '10' }).setToken(config.token);
+if (!TOKEN) {
+    throw new Error('DISCORD_TOKEN is not defined in the environment variables.');
+}
+if (!CLIENT_ID) {
+    throw new Error('CLIENT_ID is not defined in the environment variables.');
+}
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 (async () => {
     try {
         console.log(`슬래시 명령어를 Discord에 등록 중... ${commands.length}개`);
 
         await rest.put(
-            Routes.applicationCommands(config.clientId),
+            Routes.applicationCommands(CLIENT_ID),
             { body: commands },
         );
 
