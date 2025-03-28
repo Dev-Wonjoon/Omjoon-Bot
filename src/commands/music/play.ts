@@ -22,8 +22,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const member = interaction.member as GuildMember;
     const voiceChannel = member.voice.channel;
 
-    console.log('재생 명령어 시작');
-
     if(!voiceChannel) {
         return interaction.reply({
             content: '먼저 음성 채널에 참가해주세요.',
@@ -59,11 +57,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             metadata: {
                 channel: interaction.channel,
             },
-            leaveOnEmpty: false,
+            leaveOnEmpty: true,
             leaveOnEmptyCooldown: 60000,
-            leaveOnStop: false,
+            leaveOnStop: true,
             leaveOnStopCooldown: 60000,
-            leaveOnEnd: false,
+            leaveOnEnd: true,
             leaveOnEndCooldown: 60000,
             selfDeaf: true,
         });
