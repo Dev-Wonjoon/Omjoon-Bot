@@ -1,9 +1,10 @@
-import apiClient from '../api/apiClient';
+import apiClient from '../api/apiClient.js';
 
 export interface Playlist {
     id: number;
     discordId: string;
     playlistName: string;
+    description: string;
     music: Music[]
 }
 
@@ -21,8 +22,11 @@ export interface AddMusicParams {
 }
 
 class PlaylistRepository {
-    async save(playlistName: string): Promise<Playlist> {
-        const response = await apiClient.post('/playlist/create', playlistName);
+    async save(playlistName: string, playlistDesc: string): Promise<Playlist> {
+        const response = await apiClient.post('/playlist/create', { 
+            playlistName: playlistName,
+            playlistDescription: playlistDesc
+        });
         return response.data;
     }
 

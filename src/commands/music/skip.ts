@@ -15,7 +15,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             flags: MessageFlags.Ephemeral,
         });
     }
-
+    const skipSong = queue.currentTrack;
     await queue.node.skip();
-    await interaction.reply('현재 재생 중인 노래를 스킵했습니다.');
+    await interaction.reply(`**${skipSong?.title ?? '알 수 없는 곡'}** 을(를) 스킵했습니다.`);
 }

@@ -1,11 +1,10 @@
-import { error } from "console";
-import { playlistRepository } from "../repository/playlistRepository";
-import type { Playlist, AddMusicParams } from "../repository/playlistRepository";
+import { playlistRepository } from "../repository/playlistRepository.js";
+import type { Playlist, AddMusicParams } from "../repository/playlistRepository.js";
 
 class PlaylistService {
-    async create(params: string): Promise<Playlist> {
+    async create(playlistName: string, playlistDesc: string): Promise<Playlist> {
         try {
-            return await playlistRepository.save(params);
+            return await playlistRepository.save(playlistName, playlistDesc);
         } catch(error: any) {
             throw new Error(`플레이리스트 생성 중 오류: ${error.message}`);
         }

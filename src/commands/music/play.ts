@@ -42,12 +42,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         const tracks = result.tracks.slice(0, 5);
-        const selectedTrack = await selectMenuPrompt(interaction, '노래를 선택해주세요.', tracks.map((track, index) => ({
-            label: track.title,
-            description: track.author,
-            value: index.toString(),
-            raw: track,
-        })));
+        const selectedTrack = await selectMenuPrompt(
+            interaction,
+            '노래를 선택해주세요.',
+            tracks.map((track, index) => ({
+                label: track.title,
+                description: track.author,
+                value: index.toString(),
+                raw: track,
+            })),
+            '노래 목록에서 선택',
+            'track_select'
+        );
 
         if(!selectedTrack) {
             return;

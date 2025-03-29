@@ -1,6 +1,5 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
-import { getDiscordId } from '../auth/discordId';
+import { getDiscordId } from '../auth/discordId.js';
 
 const SPRING_HOST = process.env.SPRING_HOST;
 const API_ROOT_URL = process.env.API_ROOT_URL;

@@ -18,15 +18,17 @@ interface SelectOption<T> {
 export async function selectMenuPrompt<T>(
     interaction: ChatInputCommandInteraction,
     prompt: string,
-    options: SelectOption<T>[]
+    options: SelectOption<T>[],
+    placeholder: string,
+    customId: string
 ): Promise<T | null> {
     const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId('select_track')
-        .setPlaceholder('선택해주세요')
+        .setCustomId(customId)
+        .setPlaceholder(placeholder)
         .addOptions(
             options.map(opt => ({
                 label: opt.label.slice(0, 100),
-                description: opt.description?.slice(0, 100),
+                description: (opt.description ?? '해당 플레이리스트에 설명이 없습니다.').slice(0, 100),
                 value: opt.value,
             }))
         );
