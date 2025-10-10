@@ -1,5 +1,5 @@
 import { Client, Events, MessageFlags } from 'discord.js';
-import { modalHandler } from './modals/modalIndex';
+import { modalHandler } from './modals/modalIndex.js';
 
 export function registerInteractionCreate(client: Client) {
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -12,6 +12,13 @@ export function registerInteractionCreate(client: Client) {
                 }
 
                 await command.execute(interaction);
+            } else if(interaction.isAutocomplete()) {
+                const command = client.commands.get(interaction.commandName);
+                if(command && typeof command.autocomplete === 'function') {
+                    await command.autocomplete(interaction);
+                } else {
+                    console.warn(`[Autocomplete Error] 자동완성 핸들러 없음: ${interaction.commandName}`);
+                }
             } else if(interaction.isModalSubmit()) {
                 const handler = modalHandler.get(interaction.customId);
                 if(!handler) {
@@ -30,7 +37,7 @@ export function registerInteractionCreate(client: Client) {
                 !interaction.replied &&
                 !interaction.deferred
             ) {
-                await interaction.reply({
+                await interaction.followUp({
                     content: '❌ 처리 중 오류가 발생했습니다. ❌',
                     flags: MessageFlags.Ephemeral
                 });

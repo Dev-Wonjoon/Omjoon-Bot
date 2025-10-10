@@ -1,0 +1,445 @@
+diff --git a/src/api/apiClient.ts b/src/api/apiClient.ts
+index e636822..d5f69dc 100644
+--- a/src/api/apiClient.ts
++++ b/src/api/apiClient.ts
+@@ -1,11 +1,11 @@
+ import axios from 'axios';
+ import { getDiscordId } from '../auth/discordId.js';
+ 
+-const SPRING_HOST = process.env.SPRING_HOST;
++const API_HOST = process.env.SPRING_HOST;
+ const API_ROOT_URL = process.env.API_ROOT_URL;
+ 
+ const apiClient = axios.create({
+-    baseURL: `${SPRING_HOST}${API_ROOT_URL}`,
++    baseURL: `${API_HOST}${API_ROOT_URL}`,
+     timeout: 5000,
+     headers: {
+         'Content-Type': 'application/json'
+diff --git a/src/commands/playlist/playlist.ts b/src/commands/playlist/playlist.ts
+index 39c1544..476a637 100644
+--- a/src/commands/playlist/playlist.ts
++++ b/src/commands/playlist/playlist.ts
+@@ -1,6 +1,8 @@
+ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+ import { setDiscordId } from "../../auth/discordId.js";
+ import { PlaylistCommandHandler } from "../../feature/playlistHandler.js";
++import { AutocompleteInteraction } from "discord.js";
++import { playlistService } from "../../service/playlistService.js";
+ 
+ 
+ export const data = new SlashCommandBuilder()
+@@ -9,31 +11,55 @@ export const data = new SlashCommandBuilder()
+     .addSubcommand(subcommand => 
+         subcommand
+             .setName('생성')
+-            .setDescription('새로운 플레이리스트를 생성합니다.')
+-            .addStringOption(option =>
+-                option
+-                    .setName('이름')
+-                    .setDescription('생성할 플레이리스트 이름을 입력해주세요.')
+-            ))
++            .setDescription('새로운 플레이리스트를 생성합니다.'))
+     .addSubcommand(subcommand => 
+         subcommand
+             .setName('보기')
+-            .setDescription('플레이리스트 목록을 확인합니다.')
+-    )
++            .setDescription('플레이리스트 목록을 확인합니다.'))
+     .addSubcommand(subcommand => 
+         subcommand
+             .setName('삭제')
+-            .setDescription('선택한 플레이리스트를 삭제합니다.')
+-    )
++            .setDescription('선택한 플레이리스트를 삭제합니다.'))
+     .addSubcommand(subcommand => 
+         subcommand
+-            .setName('추가')
++            .setName('노래추가')
+             .setDescription('해당 플레이리스트에 노래를 추가합니다.')
+-    )
++            .addStringOption(option => 
++                option.setName('플리이름')
++                .setDescription('플레이리스트 이름을 입력해주세요')
++                .setAutocomplete(true)
++                .setRequired(true))
++            .addStringOption(option => 
++                option.setName('노래제목')
++                .setDescription('노래 제목을 입력해주세요')
++                .setRequired(true))
++        )
++    .addSubcommand(subcommand =>
++        subcommand
++            .setName('재생')
++            .setDescription('선택한 플레이리스트를 재생합니다.')
++    );
+ 
+ export async function execute(interaction: ChatInputCommandInteraction) {
+     setDiscordId(interaction.user.id);
+ 
+     const handler = new PlaylistCommandHandler();
+     await handler.handle(interaction);
++}
++
++export async function autocomplete(interaction: AutocompleteInteraction) {
++    setDiscordId(interaction.user.id);
++    const focused = interaction.options.getFocused();
++    const allPlaylists = await playlistService.getAll();
++
++    const filtered = allPlaylists
++        .filter(p => p.playlistName.toLowerCase().includes(focused.toLowerCase()))
++        .slice(0, 5);
++    
++    await interaction.respond(
++        filtered.map(p => ({
++            name: p.playlistName,
++            value: p.playlistName,
++        }))
++    );
+ }
+\ No newline at end of file
+diff --git a/src/feature/playlistHandler.ts b/src/feature/playlistHandler.ts
+index 12d5e13..59036d3 100644
+--- a/src/feature/playlistHandler.ts
++++ b/src/feature/playlistHandler.ts
+@@ -1,8 +1,9 @@
+-import { ActionRowBuilder, ChatInputCommandInteraction, MessageFlags, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
++import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from "discord.js";
+ import { useMainPlayer } from "discord-player";
+ import { playlistService } from "../service/playlistService.js";
+ import { selectMenuPrompt } from "../interactions/selectMenuPrompt.js";
+ import { createPlaylistModal } from "./playlistModal.js";
++import { setDiscordId } from "../auth/discordId.js";
+ 
+ export class PlaylistCommandHandler {
+     async handle(interaction: ChatInputCommandInteraction) {
+@@ -15,8 +16,10 @@ export class PlaylistCommandHandler {
+                 return this.viewList(interaction);
+             case '삭제':
+                 return this.delete(interaction);
+-            case '추가':
++            case '노래추가':
+                 return this.addToMusic(interaction);
++            case '재생':
++                return this.play(interaction);
+         }
+     }
+ 
+@@ -39,7 +42,7 @@ export class PlaylistCommandHandler {
+         const selected = await selectMenuPrompt(
+             interaction,
+             '플레이리스트를 선택해주세요',
+-            playlists.map((p) => ({
++            playlists.map(p => ({
+                 label: p.playlistName,
+                 description: p.description,
+                 value: p.id.toString(),
+@@ -51,12 +54,31 @@ export class PlaylistCommandHandler {
+ 
+         if(!selected) return;
+ 
+-        const musicText = selected.music.length > 0
+-            ? selected.music.map((music, index) => `${index+1}. ${music.title}`).join('\n')
+-            : '등록된 노래가 없습니다.';
++        const playlist = await playlistService.getOne(selected.id);
++
++        const musicList = playlist.music ?? [];
++
++        const embed = new EmbedBuilder()
++            .setTitle(`${selected.playlistName}`)
++            .setDescription(selected.description || '설명이 없습니다.')
++            .setColor(0x5865F2)
++            .addFields(
++                musicList.length > 0
++                    ? musicList.map((music, index) => ({
++                        name: `${index + 1}. ${music.title}`,
++                        value: '\u200B', // 빈 줄
++                    }))
++                    : [{
++                        name: '노래 없음',
++                        value: '이 플레이리스트에 등록된 노래가 없습니다.',
++                    }]
++                )
++            .setFooter({ text: `총 ${musicList.length}곡` })
++            .setTimestamp()
++
+ 
+         await interaction.followUp({
+-            content: `🎵 **${selected.playlistName}** 노래 목록\n\n${musicText}`,
++            embeds: [embed],
+             flags: MessageFlags.Ephemeral,
+         });
+     }
+@@ -95,48 +117,31 @@ export class PlaylistCommandHandler {
+     }
+ 
+     private async addToMusic(interaction: ChatInputCommandInteraction) {
++        const playlistName = interaction.options.getString('플리이름', true);
++        const query = interaction.options.getString('노래제목', true);
+         const playlists = await playlistService.getAll();
+-        if(playlists.length === 0) {
++
++        const selectedPlaylist = playlists.find(p => p.playlistName === playlistName);
++
++        if(!selectedPlaylist) {
+             return interaction.reply({
+-                content: '추가할 플레이리스트가 없습니다.',
++                content: `이름이 **${playlistName}**인 플레이리스트를 찾을 수 없습니다.`,
+                 flags: MessageFlags.Ephemeral,
+             });
+         }
+ 
+         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+ 
+-        const selectedPlaylist = await selectMenuPrompt(
+-            interaction,
+-            '노래를 추가할 플레이리스트를 선택해주세요.',
+-            playlists.map(p => ({
+-                label: p.playlistName,
+-                description: p.description,
+-                value: p.id.toString(),
+-                raw: p
+-            })),
+-            '플레이리스트 선택',
+-            'playlist_select_add'
+-        );
+-
+-        if(!selectedPlaylist) return;
+-
+-        await interaction.followUp({ content: '추가할 노래 제목 또는 URL을 입력해주세요', flags: MessageFlags.Ephemeral });
+-
+-        const filter = (m: any) => m.author.id === interaction.user.id;
+-        const colleted = await interaction.channel?.awaitMessageComponent({ filter, time: 30000 });
+-
+-        if(!colleted) {
+-            await interaction.followUp({ content: '시간이 초과되었습니다.', flags: MessageFlags.Ephemeral });
+-            return;
+-        }
+-
+-        const query = 'content' in colleted ? String(colleted.content) : '';
+         const player = useMainPlayer();
+-        const result = await player.search(query, { requestedBy: interaction.user });
++        const result = await player.search(query, {
++            requestedBy: interaction.user,
++        });
+ 
+         if(!result || result.tracks.length === 0) {
+-            await interaction.followUp({ content: '검색결과가 없습니다.' });
+-            return;
++            return interaction.followUp({
++                content: '검색 결과가 없습니다.',
++                flags: MessageFlags.Ephemeral,
++            });
+         }
+ 
+         const selectedTrack = await selectMenuPrompt(
+@@ -146,7 +151,7 @@ export class PlaylistCommandHandler {
+                 label: track.title,
+                 description: track.author,
+                 value: index.toString(),
+-                raw: track
++                raw: track,
+             })),
+             '노래 선택',
+             'track_select_add'
+@@ -160,6 +165,97 @@ export class PlaylistCommandHandler {
+             url: selectedTrack.url
+         });
+ 
+-        await interaction.followUp({ content: `**${selectedTrack.title}** 노래가 **${selectedPlaylist.playlistName}**에 추가되었습니다.`, flags: MessageFlags.Ephemeral});
++        await interaction.followUp({
++            content: `✅ **${selectedTrack.title}** 노래가 **${selectedPlaylist.playlistName}**에 추가되었습니다.`,
++            flags: MessageFlags.Ephemeral,
++        });
++    }
++
++    private async play(interaction: ChatInputCommandInteraction) {
++        setDiscordId(interaction.id);
++        const playlists = await playlistService.getAll();
++        if(playlists.length === 0) {
++            return interaction.reply({
++                content: '재생할 플레이리스트가 없습니다.',
++                flags: MessageFlags.Ephemeral,
++            });
++        }
++
++        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
++
++        const selected = await selectMenuPrompt(
++            interaction,
++            '재생할 플레이리스트를 선택해주세요.',
++            playlists.map((p) => ({
++                label: p.playlistName,
++                description: p.description,
++                value: p.id.toString(),
++                raw: p,
++            })),
++            '플레이리스트 재생 선택',
++            'playlist_play_select',
++        );
++        console.log('선택된 플레이리스트:',selected);
++        console.log('id:', selected?.id);
++
++        if(!selected) return;
++
++        const playlist = await playlistService.getOne(selected?.id);
++
++        const member = interaction.member;
++        if(!member || !('voice' in member) || !member.voice.channel) {
++            return interaction.followUp({
++                content: '먼저 음성 채널에 접속해주세요.',
++                flags: MessageFlags.Ephemeral,
++            });
++        }
++
++        const player = useMainPlayer();
++        const queue = player.nodes.create(interaction.guild!, {
++            metadata: {
++                channel: interaction.channel,
++            },
++            leaveOnEmpty: true,
++            leaveOnEnd: true,
++            leaveOnEmptyCooldown: 60000,
++            leaveOnEndCooldown: 60000,
++            selfDeaf: true,
++        });
++
++        if(!queue.connection) await queue.connect(member.voice.channel);
++
++        const musicList = playlist.music ?? [];
++
++        const tracksAdd = [];
++
++        for(const music of musicList) {
++            if(!music.url) continue;
++
++            const result = await player.search(music.url, {
++                requestedBy: interaction.user,
++            });
++
++            if(result.tracks.length > 0) {
++                tracksAdd.push(result.tracks[0]);
++            }
++        }
++
++        if(tracksAdd.length === 0) {
++            return interaction.followUp({
++                content: '플레이리스트에서 재생할 수 있는 곡이 없습니다.',
++                flags: MessageFlags.Ephemeral,
++            });
++        }
++
++        queue.addTrack(tracksAdd);
++
++        if(!queue.isPlaying()) {
++            await queue.node.play();
++        }
++
++        await interaction.followUp({
++            content: `**${selected.playlistName}** 플레이리스트 재생을 시작합니다.`,
++            flags: MessageFlags.Ephemeral,
++        });
+     }
+ }
+\ No newline at end of file
+diff --git a/src/feature/playlistModal.ts b/src/feature/playlistModal.ts
+index 223558d..16bd5fc 100644
+--- a/src/feature/playlistModal.ts
++++ b/src/feature/playlistModal.ts
+@@ -4,11 +4,17 @@ export function createPlaylistModal() {
+     const nameInput = new TextInputBuilder()
+         .setCustomId('playlist_name')
+         .setLabel('플레이리스트 이름')
++        .setPlaceholder('플레이리스트 이름을 적어주세요.')
+         .setStyle(TextInputStyle.Short)
++        .setMinLength(1)
++        .setMaxLength(60)
+         .setRequired(true);
+ 
+     const description = new TextInputBuilder()
+         .setCustomId('playlist_description')
++        .setLabel('플레이리스트 설명')
++        .setPlaceholder('플레이리스트 설명을 적어주세요.')
++        .setMaxLength(120)
+         .setStyle(TextInputStyle.Paragraph)
+         .setRequired(false);
+ 
+diff --git a/src/interactions/interactionCreate.ts b/src/interactions/interactionCreate.ts
+index 9b3342d..3409ac8 100644
+--- a/src/interactions/interactionCreate.ts
++++ b/src/interactions/interactionCreate.ts
+@@ -1,5 +1,5 @@
+ import { Client, Events, MessageFlags } from 'discord.js';
+-import { modalHandler } from './modals/modalIndex';
++import { modalHandler } from './modals/modalIndex.js';
+ 
+ export function registerInteractionCreate(client: Client) {
+     client.on(Events.InteractionCreate, async (interaction) => {
+@@ -12,6 +12,13 @@ export function registerInteractionCreate(client: Client) {
+                 }
+ 
+                 await command.execute(interaction);
++            } else if(interaction.isAutocomplete()) {
++                const command = client.commands.get(interaction.commandName);
++                if(command && typeof command.autocomplete === 'function') {
++                    await command.autocomplete(interaction);
++                } else {
++                    console.warn(`[Autocomplete Error] 자동완성 핸들러 없음: ${interaction.commandName}`);
++                }
+             } else if(interaction.isModalSubmit()) {
+                 const handler = modalHandler.get(interaction.customId);
+                 if(!handler) {
+@@ -30,7 +37,7 @@ export function registerInteractionCreate(client: Client) {
+                 !interaction.replied &&
+                 !interaction.deferred
+             ) {
+-                await interaction.reply({
++                await interaction.followUp({
+                     content: '❌ 처리 중 오류가 발생했습니다. ❌',
+                     flags: MessageFlags.Ephemeral
+                 });
+diff --git a/src/interactions/selectMenuPrompt.ts b/src/interactions/selectMenuPrompt.ts
+index 7d8a4b3..4c0fc89 100644
+--- a/src/interactions/selectMenuPrompt.ts
++++ b/src/interactions/selectMenuPrompt.ts
+@@ -35,14 +35,17 @@ export async function selectMenuPrompt<T>(
+     
+     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+ 
++
++
+     await interaction.followUp({
+         content: prompt,
+         components: [row],
+         flags: MessageFlags.Ephemeral
+     });
++    
++    const message = await interaction.fetchReply();
+ 
+     try {
+-        const message = await interaction.fetchReply();
+ 
+         const selectInteraction = await message.awaitMessageComponent({
+             componentType: ComponentType.StringSelect,
+diff --git a/tsconfig.json b/tsconfig.json
+index 5a1fe67..4533757 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -1,7 +1,7 @@
+ {
+   "compilerOptions": {
+-    "target": "ESNext",
+-    "module": "ESNext",
++    "target": "ES2020",
++    "module": "ES2022",
+     "rootDir": "src",
+     "outDir": "dist",
+     "moduleResolution": "node",
+@@ -10,6 +10,7 @@
+     "allowSyntheticDefaultImports": true,
+     "forceConsistentCasingInFileNames": true,
+     "strict": true,
++    "isolatedModules": true,
+     "skipLibCheck": true,
+   },
+   "include": ["src"]

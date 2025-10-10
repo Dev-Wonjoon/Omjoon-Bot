@@ -35,14 +35,17 @@ export async function selectMenuPrompt<T>(
     
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
+
+
     await interaction.followUp({
         content: prompt,
         components: [row],
         flags: MessageFlags.Ephemeral
     });
+    
+    const message = await interaction.fetchReply();
 
     try {
-        const message = await interaction.fetchReply();
 
         const selectInteraction = await message.awaitMessageComponent({
             componentType: ComponentType.StringSelect,
