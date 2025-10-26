@@ -1,5 +1,5 @@
 import { createApp } from "./app";
-import logger from './config/logger';
+import logger from './core/logger';
 
 (async () => {
     try {

@@ -1,5 +1,5 @@
 import { ModalSubmitInteraction, MessageFlags } from "discord.js";
-import { playlistService } from "../../service/playlistService.js";
+import { playlistService } from "../../../domain/services/playlistService.js";
 import { ModalHandler } from "../../types/ModalHandler.js";
 
 const createPlaylistModal: ModalHandler = {

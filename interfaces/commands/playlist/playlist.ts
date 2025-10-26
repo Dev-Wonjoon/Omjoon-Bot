@@ -2,7 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { setDiscordId } from "../../auth/discordId.js";
 import { PlaylistCommandHandler } from "../../feature/playlistHandler.js";
 import { AutocompleteInteraction } from "discord.js";
-import { playlistService } from "../../service/playlistService.js";
+import { playlistService } from "../../../domain/services/playlistService.js";
 
 
 export const data = new SlashCommandBuilder()

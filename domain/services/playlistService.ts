@@ -1,5 +1,5 @@
-import { playlistRepository } from "../repository/playlistRepository.js";
-import type { Playlist, AddMusicParams } from "../repository/playlistRepository.js";
+import { playlistRepository } from "@infrastructure/repository/playlistRepository";
+import type { Playlist, AddMusicParams } from "@infrastructure/repository/playlistRepository.js";
 
 class PlaylistService {
     async create(playlistName: string, playlistDesc: string): Promise<Playlist> {

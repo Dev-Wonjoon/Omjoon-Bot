@@ -2,9 +2,9 @@ import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { Player } from 'discord-player';
 import { YoutubeiExtractor } from 'discord-player-youtubei';
 import dotenv from "dotenv";
-import logger from "./config/logger";
-import { registerInteractionCreate } from './interactions/interactionCreate';
-import { loadCommands } from './utils/loadCommands';
+import logger from "@core/logger";
+import { registerInteractionCreate } from '@interfaces/interactions/interactionCreate';
+import { loadCommands } from '@utils/loadCommands';
 
 dotenv.config();
 
