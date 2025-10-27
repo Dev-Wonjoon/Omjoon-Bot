@@ -1,5 +1,5 @@
 import axios from "axios";
-import logger from "../../core/logger";
+import logger from "@core/logger";
 import { appContext } from "@core/appContext";
 import { ENV } from "@core/env";
 

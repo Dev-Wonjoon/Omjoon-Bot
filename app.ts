@@ -3,8 +3,8 @@ import { Player } from 'discord-player';
 import { YoutubeiExtractor } from 'discord-player-youtubei';
 import dotenv from "dotenv";
 import logger from "@core/logger";
-import { registerInteractionCreate } from '@interfaces/interactions/interactionCreate';
-import { loadCommands } from '@utils/loadCommands';
+import { registerInteractionCreate } from '@interfaces/interactions/interactionCreate.js';
+import { loadCommands } from '@utils/loadCommands.js';
 
 dotenv.config();
 

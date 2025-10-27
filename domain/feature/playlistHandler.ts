@@ -3,7 +3,6 @@ import { useMainPlayer } from "discord-player";
 import { playlistService } from "../services/playlistService.js";
 import { selectMenuPrompt } from "@interfaces/interactions/selectMenuPrompt.js";
 import { createPlaylistModal } from "./playlistModal.js";
-import { setDiscordId } from "../auth/discordId.js";
 
 export class PlaylistCommandHandler {
     async handle(interaction: ChatInputCommandInteraction) {
