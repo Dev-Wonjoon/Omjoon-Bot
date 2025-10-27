@@ -3,9 +3,11 @@ import {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
     MessageFlags,
-    GuildMember
+    GuildMember,
+    User,
+    UserResolvable
 } from "discord.js"
-import { selectMenuPrompt } from "../../interactions/selectMenuPrompt.js";
+import { selectMenuPrompt } from "@interfaces/interactions/selectMenuPrompt.js";
 
 export const data = new SlashCommandBuilder()
     .setName('재생')
@@ -34,7 +36,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const player = useMainPlayer();
     try {
         const result = await player.search(query, {
-            requestedBy: interaction.user,
+            requestedBy: interaction.user as UserResolvable,
         });
 
         if(!result || !result.tracks.length) {

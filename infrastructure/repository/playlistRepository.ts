@@ -1,6 +1,6 @@
 import apiClient from "@infrastructure/api/apiClient";
-import type { Playlist } from '@types/playlist';
-import type { Music } from "@types/music";
+import type { Playlist } from 'types/playlist';
+import type { Music } from "types/music";
 
 type CreatePlaylistDto = {
     playlistName: string;

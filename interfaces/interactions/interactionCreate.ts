@@ -1,5 +1,4 @@
 import { Client, Events, MessageFlags } from 'discord.js';
-import { modalHandler } from './modals/modalIndex.js';
 
 export function registerInteractionCreate(client: Client) {
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -19,13 +18,6 @@ export function registerInteractionCreate(client: Client) {
                 } else {
                     console.warn(`[Autocomplete Error] 자동완성 핸들러 없음: ${interaction.commandName}`);
                 }
-            } else if(interaction.isModalSubmit()) {
-                const handler = modalHandler.get(interaction.customId);
-                if(!handler) {
-                    console.warn(`[Modal Error] 모달 핸들러를 찾을 수 없습니다: ${interaction.customId}`)
-                    return;
-                }
-                await handler(interaction);
             }
         } catch(error) {
             console.error(`Interaction 처리 중 오류: `, error);
