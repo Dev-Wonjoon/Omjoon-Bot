@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:23
 
 WORKDIR /app
 
@@ -13,4 +13,4 @@ COPY . .
 
 RUN npm run build
 
-CMD ["node", "./dist/index.js"]
+CMD ["node", "dist/index.js"]
