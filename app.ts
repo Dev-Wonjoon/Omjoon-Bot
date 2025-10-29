@@ -1,40 +1,18 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import { Player } from 'discord-player';
-import { YoutubeiExtractor } from 'discord-player-youtubei';
 import dotenv from "dotenv";
 import logger from "@core/logger";
+
+import { client } from "@core/client";
+import { config } from "@core/config";
+import { musicManager } from "@core/musicManager";
 import { registerInteractionCreate } from '@interfaces/interactions/interactionCreate.js';
 import { loadCommands } from '@utils/loadCommands.js';
 
 dotenv.config();
 
 export async function createApp() {
-    const TOKEN = process.env.DISCORD_TOKEN;
-    if (!TOKEN) {
-        logger.error("DISCORD TOKEN IS NULL.");
-        process.exit(1);
-    }
-
-    const client = new Client({
-        intents: [
-            GatewayIntentBits.Guilds,
-            GatewayIntentBits.GuildVoiceStates,
-            GatewayIntentBits.GuildMessages,
-        ],
-    });
-
-    client.commands = new Collection();
-
-    const player = new Player(client);
-    client.player = player;
-
-    player.extractors.register(YoutubeiExtractor, {});
+    const TOKEN = config.DISCORD_TOKEN;
 
     registerInteractionCreate(client);
-
-    player.events.on('error', (error) => {
-        logger.error(`[Player Error] ${error}`);
-    });
 
     client.on('error', (error) => {
         logger.error(`[Client Error]`, error);
@@ -52,6 +30,7 @@ export async function createApp() {
         "               _/ |                                    \n" +
         "              |__/                                     ";
         logger.info(asciiArt);
+        musicManager.init(client.user!.id);
         logger.info(`${client.user?.tag} is Online.`);
     });
 

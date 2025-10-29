@@ -1,91 +1,107 @@
-import { useMainPlayer } from "discord-player";
-import { 
-    SlashCommandBuilder,
-    ChatInputCommandInteraction,
-    MessageFlags,
-    GuildMember,
-    User,
-    UserResolvable
-} from "discord.js"
-import { selectMenuPrompt } from "@interfaces/interactions/selectMenuPrompt.js";
+import { ActionRowBuilder, ChatInputCommandInteraction, ComponentType, EmbedBuilder, GuildMember, StringSelectMenuBuilder } from "discord.js";
+import { musicManager } from "@core/musicManager";
+import logger from "@core/logger";
 
-export const data = new SlashCommandBuilder()
-    .setName('재생')
-    .setDescription('노래를 검색하고 재생합니다.')
-    .addStringOption(option => 
-        option
-            .setName('검색어')
-            .setDescription('검색할 노래 또는 URL을 입력해주세요')
-            .setRequired(true)
-    );
+export const data = {
+    name: "재생",
+    description: "노래를 재생합니다.",
+    options: [{
+        name: "검색어",
+        description: "검색어 또는 URL",
+        type: 3,
+        require: true,
+    }],
+};
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const query = interaction.options.getString('검색어', true);
+    const query = interaction.options.get("query")?.value as string;
     const member = interaction.member as GuildMember;
     const voiceChannel = member.voice.channel;
 
-    if(!voiceChannel) {
-        return interaction.reply({
-            content: '먼저 음성 채널에 참가해주세요.',
-            flags: MessageFlags.Ephemeral
-        });
+    if (!voiceChannel) {
+        return interaction.reply("음성 채널에 먼저 들어가주세요");
     }
 
     await interaction.deferReply();
 
-    const player = useMainPlayer();
+    const player = musicManager.createPlayer(
+        interaction.guildId!,
+        voiceChannel.id,
+        interaction.channelId,
+    );
+
+    player.connect();
+
+    const search = await musicManager.searchTrack(query, interaction.user);
+
+    if (!search.tracks.length) {
+        return interaction.editReply("검색 결과가 없습니다.");
+    }
+
+    const trackResult = search.tracks.slice(0, 5);
+    const options = trackResult.map((track, index) => ({
+        label: `${index + 1}. ${track.title}`.substring(0, 100),
+        description: track.author.substring(0, 100),
+        value: track.uri,
+    }));
+
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId("music-select")
+        .setPlaceholder("재생할 노래를 선택하세요")
+        .addOptions(options);
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    const embed = new EmbedBuilder()
+        .setTitle("검색 결과")
+        .setDescription(trackResult.map(
+            (t, i) => `**${i + 1}.** [${t.title}](${t.uri}) • ${t.author} • ${t.duration}`
+        ).join('\n')).setColor('Blue');
+
+    await interaction.editReply({
+        embeds: [embed],
+        components: [row],
+    });
+
     try {
-        const result = await player.search(query, {
-            requestedBy: interaction.user as UserResolvable,
+        const response = await interaction.channel?.awaitMessageComponent({
+            componentType: ComponentType.StringSelect,
+            time: 60_000,
+            filter: (i) => i.user.id === interaction.user.id,
         });
 
-        if(!result || !result.tracks.length) {
-            return interaction.followUp('검색 결과가 없습니다.');
-        }
+        if (!response) return;
 
-        const tracks = result.tracks.slice(0, 5);
-        const selectedTrack = await selectMenuPrompt(
-            interaction,
-            '노래를 선택해주세요.',
-            tracks.map((track, index) => ({
-                label: track.title,
-                description: track.author,
-                value: index.toString(),
-                raw: track,
-            })),
-            '노래 목록에서 선택',
-            'track_select'
+        const selectedUrl = response.values[0];
+        const selectedTrack = trackResult.find((t) => t.uri === selectedUrl)!;
+
+        const player = musicManager.createPlayer(
+            interaction.guildId!,
+            voiceChannel.id,
+            interaction.channelId
         );
 
-        if(!selectedTrack) {
-            return;
-        }
+        player.connect();
+        player.queue.add(selectedTrack);
+        player.play();
 
-        const queue = player.nodes.create(interaction.guild!, {
-            metadata: {
-                channel: interaction.channel,
-            },
-            leaveOnEmpty: true,
-            leaveOnEmptyCooldown: 60000,
-            leaveOnStop: true,
-            leaveOnStopCooldown: 60000,
-            leaveOnEnd: true,
-            leaveOnEndCooldown: 60000,
-            selfDeaf: true,
+        await response.update({
+            embeds: [
+                new EmbedBuilder()
+                    .setTitle("선택한 곡 재생 중")
+                    .setDescription(`[${selectedTrack.title}](${selectedTrack.uri})`)
+                    .setColor("DarkBlue"),
+            ],
+            components: [],
         });
 
-        if(!queue.connection) {
-            await queue.connect(voiceChannel);
-        }
-
-        queue.addTrack(selectedTrack);
-        if(!queue.isPlaying()) {
-            await queue.node.play();
-        }
-
-        await interaction.followUp(`**${selectedTrack.title}**을 선택하셨습니다.`);
-    } catch(error) {
-        console.error(error);
-        await interaction.followUp('노래 재생 중 오류가 발생했습니다.');
+        logger.info(`[Player] ${selectedTrack.title} is now playing.`);
+    } catch (error) {
+        logger.warn("User did not select a song within the time limit.");
+        await interaction.editReply({
+            content: "60초 동안 선택하지 않아 재생이 취소되었습니다.",
+            components: [],
+            embeds: [],
+        });
     }
 }

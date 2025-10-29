@@ -1,10 +1,12 @@
 import { Client, Events, MessageFlags } from 'discord.js';
+import  { ClientWithCommands } from '@type/discord';
 
-export function registerInteractionCreate(client: Client) {
+export function registerInteractionCreate(client: ClientWithCommands) {
     client.on(Events.InteractionCreate, async (interaction) => {
         try {
+            const commands = (client as any).commands;
             if(interaction.isChatInputCommand()) {
-                const command = client.commands.get(interaction.commandName);
+                const command = commands?.get(interaction.commandName);
                 if(!command) {
                     console.warn(`[Command Error] 명령어를 찾을 수 없습니다: ${interaction.commandName}`);
                     return;
@@ -12,7 +14,7 @@ export function registerInteractionCreate(client: Client) {
 
                 await command.execute(interaction);
             } else if(interaction.isAutocomplete()) {
-                const command = client.commands.get(interaction.commandName);
+                const command = commands?.get(interaction.commandName);
                 if(command && typeof command.autocomplete === 'function') {
                     await command.autocomplete(interaction);
                 } else {

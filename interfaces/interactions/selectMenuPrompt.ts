@@ -6,7 +6,6 @@ import {
     ChatInputCommandInteraction,
     MessageFlags
 } from 'discord.js';
-import type { Track } from 'discord-player';
 
 interface SelectOption<T> {
     label: String,

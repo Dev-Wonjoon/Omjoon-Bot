@@ -1,4 +1,4 @@
 export * from './music';
 export * from './playlist';
-export * from './ModalHandler';
+export * from './erela';
 export * from './discord';

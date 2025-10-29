@@ -21,10 +21,10 @@
   "homepage": "https://github.com/Dev-Wonjoon/Omjoon-Bot#readme",
   "dependencies": {
     "axios": "^1.12.2",
-    "discord-player": "^7.1.0",
-    "discord-player-youtubei": "^1.5.0",
     "discord.js": "^14.24.0",
     "dotenv": "^17.2.3",
+    "erela.js": "^2.4.0",
+    "lavalink": "^2.13.0",
     "tsconfig-paths": "^4.2.0",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",

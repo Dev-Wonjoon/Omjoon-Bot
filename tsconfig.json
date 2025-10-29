@@ -12,7 +12,7 @@
       "@infrastructure/*": ["infrastructure/*"],
       "@interfaces/*": ["interfaces/*"],
       "@utils/*": ["utils/*"],
-      "@types/*": ["types/*"]
+      "@type/*": ["types/*"],
     },
     "resolveJsonModule": true,
     "esModuleInterop": true,
