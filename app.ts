@@ -3,7 +3,7 @@ import logger from "@core/logger";
 
 import { client } from "@core/client";
 import { config } from "@core/config";
-import { musicManager } from "@core/musicManager";
+import { MusicManager } from "@core/musicManager";
 import { registerInteractionCreate } from '@interfaces/interactions/interactionCreate.js';
 import { loadCommands } from '@utils/loadCommands.js';
 
@@ -21,6 +21,7 @@ export async function createApp() {
     client.once('clientReady', () => {
         logger.info("application starting...")
         const asciiArt =
+        "\n"+
         "  ____            _                     ____        _   \n" +
         " / __ \\          (_)                   |  _ \\      | |  \n" +
         "| |  | |_ __ ___  _  ___   ___  _ __   | |_) | ___ | |_ \n" +
@@ -28,9 +29,9 @@ export async function createApp() {
         "| |__| | | | | | | | (_) | (_) | | | | | |_) | (_) | |_ \n" +
         " \\____/|_| |_| |_| |\\___/ \\___/|_| |_| |____/ \\___/ \\__|\n" +
         "               _/ |                                    \n" +
-        "              |__/                                     ";
+        "              |__/                                     "+
+        "\n";
         logger.info(asciiArt);
-        musicManager.init(client.user!.id);
         logger.info(`${client.user?.tag} is Online.`);
     });
 

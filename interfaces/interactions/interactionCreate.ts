@@ -1,5 +1,6 @@
 import { Client, Events, MessageFlags } from 'discord.js';
-import  { ClientWithCommands } from '@type/discord';
+import { ClientWithCommands } from '@type/discord';
+import { musicManager } from '@core/musicManager';
 
 export function registerInteractionCreate(client: ClientWithCommands) {
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -12,7 +13,7 @@ export function registerInteractionCreate(client: ClientWithCommands) {
                     return;
                 }
 
-                await command.execute(interaction);
+                await command.execute(interaction, musicManager);
             } else if(interaction.isAutocomplete()) {
                 const command = commands?.get(interaction.commandName);
                 if(command && typeof command.autocomplete === 'function') {

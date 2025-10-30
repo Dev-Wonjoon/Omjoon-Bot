@@ -1,5 +1,4 @@
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { Player } from 'erela.js';
 
 export const client = new Client({
     intents: [
@@ -12,7 +11,6 @@ export const client = new Client({
 declare module 'discord.js' {
     interface Client {
         commands?: Collection<string, any>;
-        player?: Player;
     }
 }
 

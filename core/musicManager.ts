@@ -1,133 +1,179 @@
-import { Manager, NodeOptions, Player, Track } from "erela.js";
+import { Client, GuildMember, VoiceBasedChannel } from 'discord.js';
+import { Shoukaku, Player, Connectors } from 'shoukaku';
+import logger from '@core/logger';
 import { client } from '@core/client';
 import { config } from '@core/config';
-import logger from '@core/logger';
-import { NewsChannel, TextChannel, ThreadChannel } from "discord.js";
 
-let manager: Manager | null = null;
+interface LavalinkNodeOptions {
+    name: string;
+    url: string;
+    auth: string;
+}
 
-export class MusicManager {
-    private static _instance: MusicManager;
-    private _manager: Manager;
-
-    private constructor() {
-        const nodes: NodeOptions[] = [
-            {
-                identifier: "main",
-                host: config.LAVALINK_HOST,
-                port: config.LAVALINK_PORT,
-                password: config.LAVALINK_PASSWORD,
-                retryAmount: 5,
-                retryDelay: 3000,
-                secure: false
-            },
-        ];
-
-        this._manager = new Manager({
-            nodes,
-            send(id, payload) {
-                const guild = client.guilds.cache.get(id);
-                if(guild) guild.shard.send(payload);
-            },
-        });
-        this.registerEvents();
-    }
-
-    public static get instance(): MusicManager {
-        if (!MusicManager._instance) {
-            MusicManager._instance = new MusicManager();
-        }
-        return this._instance;
-    }
-
-    public get players() {
-        return this._manager.players;
-    }
-
-    private registerEvents(): void {
-        const manager = this._manager;
-
-        manager.on("nodeConnect", (node) => {
-            logger.info(`[Lavalink] Connected to node: ${node.options.identifier}`);
-        })
-
-        manager.on("nodeError", (node, error) => {
-            logger.error(`[Lavalink] Node ${node.options.identifier} error: ${error.message}`);
-        });
-
-        manager.on("trackStart", (player, track: Track) => {
-            const channel = client.channels.cache.get(player.textChannel!);
-            if (channel && (channel instanceof TextChannel || channel instanceof NewsChannel || channel instanceof ThreadChannel)) {
-                channel.send(`Now Playing: **${track.title}**`);
-            }
-            logger.info(`[Player] Started playing: ${track.title}`);
-        });
-
-        manager.on("queueEnd", (player) => {
-            const channel = client.channels.cache.get(player.textChannel!);
-            if (channel && (channel instanceof TextChannel || channel instanceof NewsChannel || channel instanceof ThreadChannel)) {
-                channel.send(`Queue has ended`);
-            }
-            
-            const timeout = setTimeout(() => {
-                if(!player.queue.size && !player.playing) {
-                    player.destroy();
-                }
-            }, 120 * 1000);
-
-            const onTrackAdd = () => {
-                clearTimeout(timeout);
-                logger.debug(`[Player] New Track added.`);
-                player.off("trackAdd", onTrackAdd);
-            };
-
-            player.on("trackAdd", onTrackAdd);
-
-        });
-
-        manager.on("trackEnd", async (player, track) => {
-            if(!(player as any).autoplay) return;
-
-            try{
-                const related = await manager.search(`${track.title} related`, track.requester)
-
-                if(!related.tracks.length) {
-                    logger.warn(`[AutoPlay] No related tracks found for ${track.title}`);
-                    return
-                }
-
-                const nextTrack = related.tracks[0];
-                player.queue.add(nextTrack);
-
-                const channel = client.channels.cache.get(player.textChannel!);
-                if (channel && "send" in channel) {
-                    channel.send(`**AutoPlay:** 다음 곡 재생 - ${nextTrack.title}`);
-                }
-
-                if(!player.playing) player.play();
-            } catch (error) {
-                logger.error(`[AutoPlay Error] ${(error as Error).message}`);
-            }
-        });
-
-    }
-
-    public init(clientId: string): void {
-        this._manager.init(clientId);
-        logger.info(`[Lavalink] Manager initialized for client: ${clientId}`);
-    }
-
-    public createPlayer(guildId: string, voiceChannel: string, textChannel: string) {
-        return this._manager.create({
-            guild: guildId,
-            voiceChannel,
-            textChannel
-        });
-    }
-
-    public async searchTrack(query: string, user: any) {
-        return this._manager.search(query, user);
+interface QueueItem {
+    encoded: string;
+    info: {
+        title: string;
+        uri?: string;
+        author: string;
+        length: number;
     }
 }
 
-export const musicManager = MusicManager.instance;
+export class MusicManager {
+    private readonly shoukaku: Shoukaku;
+    private players: Map<string, Player>;
+    private queues: Map<string, QueueItem[]>;
+
+    constructor(client: Client, lavalinkNodes: LavalinkNodeOptions[]) {
+
+        this.shoukaku = new Shoukaku(
+            new Connectors.DiscordJS(client),
+            lavalinkNodes.map(node => ({
+                name: node.name,
+                url: node.url,
+                auth: node.auth,
+            })),
+            {
+                resume: true,
+                reconnectTries: 3,
+                resumeTimeout: 60,
+            }
+        );
+
+        this.players = new Map();
+        this.queues = new Map();
+
+        this.registerEvents();
+    }
+
+    private registerEvents() {
+        this.shoukaku.on('ready', (name: string) => {
+            console.log(`[Shoukaku] Node "${name}" is ready`);
+        });
+
+        this.shoukaku.on('error', (name: string, error: Error) => {
+            console.error(`[Shoukaku] Node "${name}" error:`, error);
+        });
+
+        this.shoukaku.on('close', (name: string, code: number, reason: string) => {
+            console.warn(`[Shoukaku] Node "${name}" closed: [${code}] ${reason}`);
+        });
+
+        this.shoukaku.on('debug', (name: string, info: string) => {
+            console.debug(`[Shoukaku:Debug] ${name}: ${info}`);
+        });
+    }
+
+    public getQueue(guildId: string): QueueItem[] {
+        return this.queues.get(guildId) || [];
+    }
+
+    public getPlayer(guildId: string): Player | undefined {
+        return this.players.get(guildId);
+    }
+
+    public setQueue(guildId: string, queue: QueueItem[]): void {
+        this.queues.set(guildId, queue);
+    }
+
+    public clearQueue(guildId: string): void {
+        this.queues.set(guildId, []);
+    }
+
+    public async joinChannel(member: GuildMember, channel: VoiceBasedChannel) {
+        const nodeList = Array.from(this.shoukaku.nodes.values());
+        if (nodeList.length === 0) throw new Error('No Lavalink node available');
+
+        const player = await this.shoukaku.joinVoiceChannel({
+            guildId: channel.guild.id,
+            channelId: channel.id,
+            shardId: channel.guild.shardId,
+            deaf: true,
+        });
+
+        this.players.set(channel.guild.id, player);
+        this.queues.set(channel.guild.id, []);
+        return player;
+    }
+
+    public async play(guildId: string, query: string) {
+        const player = this.players.get(guildId);
+        if (!player) throw new Error('No active player in this guild.');
+
+        const node = player.node;
+        const result = await node.rest.resolve(query);
+
+        if (!result) throw new Error('No result returned from Lavalink');
+
+        if (result.loadType === 'error' || result.loadType === 'empty') {
+            throw new Error('No tracks found for this query.');
+        }
+
+        let track;
+        if (result.loadType === 'track') {
+            track = result.data;
+        } else if (result.loadType === 'playlist') {
+            track = result.data.tracks[0];
+        } else if (result.loadType === 'search') {
+            track = result.data[0];
+        } else {
+            throw new Error('Unsupported load type.');
+        }
+
+        await player.playTrack({ track: { encoded: track.encoded } });
+        logger.info(`Now playing: ${track.info.title}`);
+
+        return track.info;
+    }
+
+    public async skip(guildId: string) {
+        const player = this.players.get(guildId);
+        const queue = this.queues.get(guildId);
+        if (!player || !queue) throw new Error('No active player or queue');
+        await player.stopTrack();
+
+        const next = queue.shift();
+        if(next) {
+            await player.playTrack({ track: { encoded: next.encoded }});
+            logger.info(`Skipped to next: ${next.info.title}`);
+            return `Skipped to **${next.info.title}**`;
+        } else {
+            logger.info(`Queue empty, stopping`);
+            return `No more songs in queue.`;
+        }
+    }
+
+    public async pause(guildId: string) {
+        const player = this.players.get(guildId);
+        if (!player) throw new Error('No active player.');
+        await player.setPaused(true);
+    }
+
+    public async resume(guildId: string) {
+        const player = this.players.get(guildId);
+        if (!player) throw new Error('No active player.');
+        await player.setPaused(false);
+    }
+
+    public async leave(guildId: string) {
+        const player = this.players.get(guildId);
+        if (!player) return;
+        await this.shoukaku.leaveVoiceChannel(guildId);
+        await player.destroy();
+        
+        this.players.delete(guildId);
+        this.queues.delete(guildId);
+        logger.info(`Left voice channel in guild ${guildId}`);
+    }
+}
+
+const lavalinkNodes: LavalinkNodeOptions[] = [
+    {
+        name: 'default',
+        url: `${config.LAVALINK_HOST}:${config.LAVALINK_PORT}`,
+        auth: config.LAVALINK_PASSWORD,
+    },
+];
+
+export const musicManager = new MusicManager(client, lavalinkNodes);
