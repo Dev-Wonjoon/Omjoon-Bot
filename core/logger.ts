@@ -24,23 +24,20 @@ const logFormat = winston.format.printf(({ timestamp, level, message, stack }) =
     return `${timestamp} [${levelPadded}] [${threadName}] ${className} - ${msg}`;
 });
 
+const isProd = process.env.NODE_ENV === "production";
+
+const baseFormats = [
+    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss"}),
+    winston.format.errors({ stack: true }),
+    !isProd ? winston.format.colorize({ all: true }) : winston.format.uncolorize(),
+    logFormat
+];
+
 const logger = winston.createLogger({
-    level: process.env.NODE_ENV === "production" ? "info" : "debug",
-    format: winston.format.combine(
-        winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss"}),
-        winston.format.errors({ stack: true }),
-        logFormat
-    ),
+    level: isProd ? "info" : "debug",
+    format: winston.format.combine(...baseFormats),
     transports: [
-        new winston.transports.Console({
-            format:
-                process.env.NODE_ENV === "production"
-                ? winston.format.simple()
-                : winston.format.combine(
-                    winston.format.colorize({ all: true }),
-                    winston.format.simple()
-                ),
-        }),
+        new winston.transports.Console(),
         new DailyRotateFile({
             dirname: "logs",
             filename: "bot-%DATE%.log",

@@ -1,39 +1,68 @@
-import { REST, Routes } from 'discord.js';
-import fs from "fs";
 import path from "path";
-import { config } from "dotenv";
-import logger from '@core/logger';
-config();
+import { pathToFileURL } from "url";
+import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import logger from "@core/logger";
+import { config } from "@core/config";
+import { getAllCommandfiles } from "@utils/getAllCommands";
 
-(async () => {
+interface LoadedCommand {
+    data: SlashCommandBuilder;
+    execute: (...args: unknown[]) => unknown;
+}
+
+function collectCommandFiles(): string[] {
+    const commandsDir = path.join(config.BASE_DIR, "dist", "interfaces", "commands");
+    logger.info(`Scanning compiled commands under: ${commandsDir}`);
+    return getAllCommandfiles(commandsDir).filter((file) => file.endsWith(".js"));
+}
+
+async function loadCommand(filePath: string): Promise<LoadedCommand | null> {
     try {
-        const commands: any[] = [];
-        const commandsPath = path.join(process.cwd(), "dist", "interfaces", "commands");
-        const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
-        for (const file of commandFiles) {
-            try {
-                const command = await import(path.join(commandsPath, file));
-                if("data" in command.default && "execute" in command.default) {
-                    commands.push(command.default.data.toJSON());
-                    logger.info(`Loaded command: /${command.default.data.name}`);
-                } else {
-                logger.warn(`Skipped invaild command file: ${file}`);
-                }
-            } catch(error) {
-                logger.error(`Failed to import ${file}: ${(error as Error).message}`);
-            }
+        const moduleUrl = pathToFileURL(filePath).href;
+        const imported = await import(moduleUrl);
+        const command = (imported.default ?? imported) as Partial<LoadedCommand>;
+
+        if (command && typeof command === "object" && command.data && command.execute) {
+            return command as LoadedCommand;
         }
-        const rest = new REST({ version: "10"}).setToken(process.env.DISCORD_TOKEN!);
 
-        logger.info(`Deploying ${commands.length} command to Discord...`);
+        logger.warn(`Skipped invalid command module: ${filePath}`);
+        return null;
+    } catch (error) {
+        logger.error(`Failed to import command ${filePath}: ${(error as Error).message}`);
+        return null;
+    }
+}
 
-        await rest.put(
-            Routes.applicationCommands(process.env.DISCORD_TOKEN!),
-            { body: commands },
-        );
+async function gatherCommandPayloads() {
+    const files = collectCommandFiles();
+    const payloads: any[] = [];
 
-        logger.info(`Successfully deployed ${commands.length} commands`);
+    for (const file of files) {
+        const command = await loadCommand(file);
+        if (command) {
+            payloads.push(command.data.toJSON());
+            logger.info(`Prepared command for deploy: /${command.data.name}`);
+        }
+    }
+
+    return payloads;
+}
+
+export async function deployCommands() {
+    try {
+        const commands = await gatherCommandPayloads();
+        const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
+
+        logger.info(`Deploying ${commands.length} commands to Discord...`);
+        await rest.put(Routes.applicationCommands(config.CLIENT_ID), { body: commands });
+        logger.info(`Successfully deployed ${commands.length} commands.`);
     } catch (error) {
         logger.error(`Command deployment failed: ${(error as Error).message}`);
+        process.exitCode = 1;
     }
-})();
+}
+
+if (require.main === module) {
+    deployCommands();
+}

@@ -1,4 +1,4 @@
-import { Client, GuildMember, VoiceBasedChannel } from 'discord.js';
+import { Client, GuildMember, VoiceBasedChannel, ChannelType } from 'discord.js';
 import { Shoukaku, Player, Connectors } from 'shoukaku';
 import logger from '@core/logger';
 import { client } from '@core/client';
@@ -84,16 +84,48 @@ export class MusicManager {
     public async joinChannel(member: GuildMember, channel: VoiceBasedChannel) {
         const nodeList = Array.from(this.shoukaku.nodes.values());
         if (nodeList.length === 0) throw new Error('No Lavalink node available');
+        const guildId = channel.guild.id;
+        const existingPlayer = this.players.get(guildId);
+        if (existingPlayer) {
+            const existingConnection = this.shoukaku.connections.get(guildId);
+            if (existingConnection?.channelId === channel.id) {
+                return existingPlayer;
+            }
+        }
 
         const player = await this.shoukaku.joinVoiceChannel({
-            guildId: channel.guild.id,
+            guildId,
             channelId: channel.id,
             shardId: channel.guild.shardId,
             deaf: true,
         });
 
-        this.players.set(channel.guild.id, player);
-        this.queues.set(channel.guild.id, []);
+        this.players.set(guildId, player);
+        if (!this.queues.has(guildId)) {
+            this.queues.set(guildId, []);
+        }
+
+        if (channel.type === ChannelType.GuildStageVoice) {
+            const me = channel.guild.members.me;
+            const voice = me?.voice;
+            if (voice) {
+                try {
+                    if (voice.suppress) {
+                        await voice.setSuppressed(false);
+                    }
+                } catch (error) {
+                    logger.warn(`Failed to unsuppress bot in stage channel ${channel.id}:`, error);
+                }
+
+                if (voice.suppress) {
+                    try {
+                        await voice.setRequestToSpeak(true);
+                    } catch (error) {
+                        logger.warn(`Failed to request to speak in stage channel ${channel.id}:`, error);
+                    }
+                }
+            }
+        }
         return player;
     }
 

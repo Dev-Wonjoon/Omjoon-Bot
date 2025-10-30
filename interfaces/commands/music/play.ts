@@ -6,11 +6,11 @@ export const data = new SlashCommandBuilder()
     .setName('재생')
     .setDescription("음악을 검색하고 재생할 곡을 선택합니다.")
     .addStringOption((option) =>
-        option.setName("query").setDescription("노래 제목 또는 URL").setRequired(true)
+        option.setName("검색어").setDescription("노래 제목 또는 URL").setRequired(true)
     );
 
 export async function execute(interaction: ChatInputCommandInteraction, manager: MusicManager) {
-    const query = interaction.options.getString("query", true);
+    const query = interaction.options.getString("검색어", true);
     const member = interaction.member;
     const voiceChannel = (interaction.member as any)?.voice?.channel;
 
@@ -24,7 +24,9 @@ export async function execute(interaction: ChatInputCommandInteraction, manager:
     const player = await manager.joinChannel(member as any, voiceChannel);
 
     const node = player.node;
-    const result = await node.rest.resolve(query);
+    const isUrl = /^https?:\/\//i.test(query);
+    const searchQuery = isUrl ? query : `ytsearch:${query}`;
+    const result = await node.rest.resolve(searchQuery);
     if(!result || result.loadType === "error" || result.loadType === "empty") {
         await interaction.editReply("검색 결과가 없습니다.");
         return;
@@ -40,7 +42,7 @@ export async function execute(interaction: ChatInputCommandInteraction, manager:
     const options = tracks.map((track, index) => ({
         label: track.info.title.length > 90 ? track.info.title.slice(0, 37) + "..." : track.info.title,
         description: track.info.author || "Unknown artist",
-        value: track.encoded,
+        value: index.toString(),
     }));
 
     const selectMenu = new StringSelectMenuBuilder()
@@ -67,8 +69,8 @@ export async function execute(interaction: ChatInputCommandInteraction, manager:
             return
         }
 
-        const selected = selectMenuInteraction.values[0];
-        const selectedTrack = tracks.find((t) => t.encoded === selected);
+        const selected = Number(selectMenuInteraction.values[0]);
+        const selectedTrack = Number.isInteger(selected) ? tracks[selected] : undefined;
         if(!selectedTrack) {
             await selectMenuInteraction.reply({ content: "선택된 곡을 찾을 수 없습니다.", ephemeral: true });
             return;
