@@ -34,11 +34,6 @@ export class MusicManager {
                 url: node.url,
                 auth: node.auth,
             })),
-            {
-                resume: true,
-                reconnectTries: 3,
-                resumeTimeout: 60,
-            }
         );
 
         this.players = new Map();
