@@ -3,7 +3,7 @@ import logger from "@core/logger";
 
 import { client } from "@core/client";
 import { config } from "@core/config";
-import { MusicManager } from "@core/musicManager";
+import { MusicManager } from '@core/musicManager'
 import { registerInteractionCreate } from '@interfaces/interactions/interactionCreate.js';
 import { loadCommands } from '@utils/loadCommands.js';
 
@@ -11,14 +11,15 @@ dotenv.config();
 
 export async function createApp() {
     const TOKEN = config.DISCORD_TOKEN;
-
-    registerInteractionCreate(client);
-
+    const musicManager = MusicManager.getInstance(client);
+    registerInteractionCreate(client, musicManager);
     client.on('error', (error) => {
         logger.error(`[Client Error]`, error);
+        
     });
 
     client.once('clientReady', () => {
+        musicManager.init();
         logger.info("application starting...")
         const asciiArt =
         "\n"+
@@ -32,6 +33,7 @@ export async function createApp() {
         "              |__/                                     "+
         "\n";
         logger.info(asciiArt);
+        
         logger.info(`${client.user?.tag} is Online.`);
     });
 

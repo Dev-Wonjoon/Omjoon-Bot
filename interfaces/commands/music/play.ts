@@ -1,114 +1,119 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, ComponentType } from "discord.js";
-import { MusicManager } from "@core/musicManager";
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
+  ComponentType,
+} from "discord.js";
 import logger from "@core/logger";
+import { MusicManager } from "@core/musicManager";
 
 export const data = new SlashCommandBuilder()
-    .setName('재생')
-    .setDescription("음악을 검색하고 재생할 곡을 선택합니다.")
-    .addStringOption((option) =>
-        option.setName("검색어").setDescription("노래 제목 또는 URL").setRequired(true)
+  .setName("재생")
+  .setDescription("음악을 검색하고 재생할 곡을 선택합니다.")
+  .addStringOption((option) =>
+    option.setName("검색어").setDescription("노래 제목 또는 URL").setRequired(true)
+  );
+
+export async function execute(
+  interaction: ChatInputCommandInteraction,
+  musicManager: MusicManager
+) {
+  const query = interaction.options.getString("검색어", true);
+  const guild = interaction.guild;
+  const member = interaction.member;
+
+  if (!guild || !member || !("voice" in member)) {
+    await interaction.reply("음성 채널에 접속해주세요.");
+    return;
+  }
+
+  const voiceChannel = member.voice.channel;
+  if (!voiceChannel) {
+    await interaction.reply("먼저 음성 채널에 들어가 주세요.");
+    return;
+  }
+
+  await interaction.deferReply();
+
+  // 🎧 join
+  const player = await musicManager.join(guild, voiceChannel);
+
+  try {
+    logger.info(`[PlayCommand] 검색 요청: "${query}" (guild: ${guild.id})`);
+    const result = await player.search(query, { requester: interaction.user });
+
+    // ✅ 상세 로깅
+    logger.info(
+      `[PlayCommand] 검색 결과 loadType=${result.loadType}, tracks=${result.tracks.length}`
     );
 
-export async function execute(interaction: ChatInputCommandInteraction, manager: MusicManager) {
-    const query = interaction.options.getString("검색어", true);
-    const member = interaction.member;
-    const voiceChannel = (interaction.member as any)?.voice?.channel;
-
-    if(!voiceChannel) {
-        await interaction.reply("먼저 음성 채널에 들어가야 합니다.");
-        return;
+    if (result.exception) {
+      logger.error(
+        `[PlayCommand] 검색 중 예외 발생: ${result.exception.message || result.exception}`
+      );
     }
 
-    await interaction.deferReply();
-
-    const player = await manager.joinChannel(member as any, voiceChannel);
-
-    const node = player.node;
-    const isUrl = /^https?:\/\//i.test(query);
-    const searchQuery = isUrl ? query : `ytsearch:${query}`;
-    const result = await node.rest.resolve(searchQuery);
-    if(!result || result.loadType === "error" || result.loadType === "empty") {
-        await interaction.editReply("검색 결과가 없습니다.");
-        return;
+    // 🔎 결과 없음
+    if (!result.tracks.length) {
+      await interaction.editReply("검색 결과가 없습니다.");
+      logger.warn(`[PlayCommand] 검색 결과가 없습니다: "${query}"`);
+      return;
     }
 
-    const tracks =
-        result.loadType == "search"
-        ? result.data.slice(0, 5)
-        : result.loadType === "playlist"
-        ? result.data.tracks.slice(0, 5)
-        : [result.data];
-    
-    const options = tracks.map((track, index) => ({
-        label: track.info.title.length > 90 ? track.info.title.slice(0, 37) + "..." : track.info.title,
-        description: track.info.author || "Unknown artist",
-        value: index.toString(),
-    }));
+    // 🎶 검색된 트랙 중 상위 7개
+    const tracks = result.tracks.slice(0, 7);
+    logger.debug(`[PlayCommand] 첫 번째 결과: ${tracks[0].info.title}`);
 
     const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId("music_select")
-        .setPlaceholder("재생할 곡을 선택하세요.")
-        .addOptions(options);
-    
+      .setCustomId("track_select")
+      .setPlaceholder("재생할 곡을 선택하세요")
+      .addOptions(
+        tracks.map((t, i) => ({
+          label: `${i + 1}. ${t.info.title}`.slice(0, 50),
+          description: t.info.author?.slice(0, 30) || "Unknown artist",
+          value: i.toString(),
+        }))
+      );
+
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
     await interaction.editReply({
-        content: "검색된 노래 목록입니다. 재생할 곡을 선택하세요.",
-        components: [row],
+      content: "재생할 곡을 선택해주세요:",
+      components: [row],
     });
 
-    const collector = interaction.channel?.createMessageComponentCollector({
-        componentType: ComponentType.StringSelect,
-        time: 30000,
+    // 🎚 선택 처리
+    const selectInteraction = await interaction.channel?.awaitMessageComponent({
+      componentType: ComponentType.StringSelect,
+      time: 30_000,
+      filter: (i) => i.user.id === interaction.user.id,
     });
 
-    collector?.on("collect", async (selectMenuInteraction: StringSelectMenuInteraction) => {
-        if(selectMenuInteraction.customId !== "music_select") return;
-        if(selectMenuInteraction.user.id !== interaction.user.id) {
-            await selectMenuInteraction.reply({ content: "이 메뉴는 당신의 명령이 아닙니다.", ephemeral: true });
-            return
-        }
+    const selectedIndex = parseInt(
+      (selectInteraction as StringSelectMenuInteraction).values[0],
+      10
+    );
+    const track = tracks[selectedIndex];
 
-        const selected = Number(selectMenuInteraction.values[0]);
-        const selectedTrack = Number.isInteger(selected) ? tracks[selected] : undefined;
-        if(!selectedTrack) {
-            await selectMenuInteraction.reply({ content: "선택된 곡을 찾을 수 없습니다.", ephemeral: true });
-            return;
-        }
+    player.queue.add(track);
 
-        if(player.track) {
-            const queue = manager.getQueue(interaction.guildId!);
-            queue.push({
-                encoded: selectedTrack.encoded,
-                info: {
-                    title: selectedTrack.info.title,
-                    uri: selectedTrack.info.uri,
-                    author: selectedTrack.info.author,
-                    length: selectedTrack.info.length
-                }
-            });
+    if (!player.playing) {
+      await player.play();
+    }
 
-            logger.info(`[Queue] Added to queue: ${selectedTrack.info.title}`);
-            await selectMenuInteraction.update({
-                content: `대기열에 추가되었습니다: ${selectedTrack.info.title}`,
-                components: [],
-            });
-        } else {
-            await player.playTrack({ track: { encoded: selectedTrack.encoded } });
-            await selectMenuInteraction.update({
-                content: `재생 중: ${selectedTrack.info.title}`,
-                components: [],
-            });
-        }
-        collector.stop("track_selected");
+    await (selectInteraction as StringSelectMenuInteraction).update({
+      content: `**${track.info.title}** 재생을 시작합니다.`,
+      components: [],
     });
 
-    collector?.on("end", (_, reason) => {
-        if(reason !== "track_selected") {
-            interaction.editReply({
-                content: "시간이 초과되었습니다. 다시 명령어를 입력해주세요.",
-                components: [],
-            });
-        }
+    logger.info(`[PlayCommand] ${interaction.user.tag} - ${track.info.title} 재생 시작`);
+  } catch (error: any) {
+    logger.error(`[PlayCommand] 오류 발생: ${error.message || error}`);
+    await interaction.editReply({
+      content: "검색 중 오류가 발생했습니다.",
+      components: [],
     });
+  }
 }

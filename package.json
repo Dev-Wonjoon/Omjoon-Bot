@@ -24,11 +24,10 @@
     "discord.js": "^14.24.0",
     "dotenv": "^17.2.3",
     "lavalink": "^2.13.0",
+    "lavalink-client": "^2.6.2",
     "shoukaku": "^4.1.1",
-    "tsconfig-paths": "^4.2.0",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",
-    "youtubei.js": "^16.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

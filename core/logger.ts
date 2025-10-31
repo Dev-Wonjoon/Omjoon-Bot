@@ -21,7 +21,7 @@ const logFormat = winston.format.printf(({ timestamp, level, message, stack }) =
     const className = getCallerFile();
     const levelPadded = level.toUpperCase().padEnd(5, ' ');
     const msg = stack || message;
-    return `${timestamp} [${levelPadded}] [${threadName}] ${className} - ${msg}`;
+    return `[${timestamp}] [${levelPadded}] [${threadName}] - ${msg}`;
 });
 
 const isProd = process.env.NODE_ENV === "production";
