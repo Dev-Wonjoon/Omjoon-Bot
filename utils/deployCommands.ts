@@ -1,7 +1,7 @@
 import path from "path";
 import { REST, Routes, SlashCommandBuilder } from "discord.js";
 import logger from "@core/logger";
-import { config } from "@core/config";
+import { config } from "@core/config/config";
 import { getAllCommandfiles } from "@utils/getAllCommands";
 
 interface LoadedCommand {

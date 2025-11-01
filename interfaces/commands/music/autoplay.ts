@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { MusicManager } from "@core/musicManager";
+import { MusicManager } from "@core/music/musicManager";
 import logger from "@core/logger";
 
 export const data = new SlashCommandBuilder()

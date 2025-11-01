@@ -1,5 +1,5 @@
 import logger from "@core/logger";
-import { MusicManager } from "@core/musicManager";
+import { MusicManager } from "@core/music/musicManager";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
 

@@ -7,7 +7,7 @@ import {
   ComponentType,
 } from "discord.js";
 import logger from "@core/logger";
-import { MusicManager } from "@core/musicManager";
+import { MusicManager } from "@core/music/musicManager";
 
 export const data = new SlashCommandBuilder()
   .setName("재생")

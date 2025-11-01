@@ -1,5 +1,5 @@
 import logger from "@core/logger";
-import { MusicManager } from "@core/musicManager";
+import { MusicManager } from "@core/music/musicManager";
 import { ActionRowBuilder } from "@discordjs/builders";
 import { ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 

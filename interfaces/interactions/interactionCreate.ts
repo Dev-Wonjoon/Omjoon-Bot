@@ -1,6 +1,6 @@
 import { Client, Events, MessageFlags } from 'discord.js';
 import { ClientWithCommands } from '@type/discord';
-import { MusicManager } from '@core/musicManager';
+import { MusicManager } from '@core/music/musicManager';
 
 export function registerInteractionCreate(client: ClientWithCommands, musicManager: MusicManager) {
     client.on(Events.InteractionCreate, async (interaction) => {

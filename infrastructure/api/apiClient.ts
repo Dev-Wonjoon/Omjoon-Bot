@@ -1,6 +1,6 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
+import axios, { AxiosInstance } from "axios";
 import logger from "@core/logger";
-import { ENV } from "@core/env";
+import { ENV } from "@core/config/env";
 import { appContext } from "@core/appContext";
 
 const apiClient: AxiosInstance = axios.create({

@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import logger from "@core/logger";
 import { getAllCommandfiles } from "@utils/getAllCommands";
-import { config } from "@core/config";
+import { config } from "@core/config/config";
 
 export async function loadCommands(client: Client) {
     try {

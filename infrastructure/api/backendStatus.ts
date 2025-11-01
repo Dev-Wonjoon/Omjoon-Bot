@@ -1,7 +1,7 @@
 import axios from "axios";
 import logger from "@core/logger";
 import { appContext } from "@core/appContext";
-import { ENV } from "@core/env";
+import { ENV } from "@core/config/env";
 
 const BASE_INTERVAL = 30_000;
 const MAX_INTERVAL = 5 * 60_000;
