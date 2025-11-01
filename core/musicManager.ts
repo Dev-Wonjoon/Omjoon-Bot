@@ -85,6 +85,7 @@ export class MusicManager {
         this.manager.on("queueEnd", (player: Player) => {
             logger.info(`[${player.guildId}] Queue ended.`);
         });
+
     }
 
     async join(guild: Guild, channel: VoiceBasedChannel): Promise<Player> {
@@ -150,5 +151,9 @@ export class MusicManager {
 
     public getPlayer(guildId: string): Player | undefined {
         return this.manager.players.get(guildId);
+    }
+
+    public sendRaw(data: any) {
+        this.manager.sendRawData(data);
     }
 }

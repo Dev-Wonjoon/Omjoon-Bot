@@ -6,7 +6,6 @@ export function registerInteractionCreate(client: ClientWithCommands, musicManag
     client.on(Events.InteractionCreate, async (interaction) => {
         try {
             const commands = (client as any).commands;
-            musicManager.init();
             if(interaction.isChatInputCommand()) {
                 const command = commands?.get(interaction.commandName);
                 if(!command) {

@@ -17,7 +17,8 @@ export async function createApp() {
         logger.error(`[Client Error]`, error);
         
     });
-
+    client.on("raw", (data) => musicManager.sendRaw(data));
+    
     client.once('clientReady', () => {
         musicManager.init();
         logger.info("application starting...")
