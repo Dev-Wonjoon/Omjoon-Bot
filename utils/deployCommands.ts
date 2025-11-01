@@ -1,5 +1,4 @@
 import path from "path";
-import { pathToFileURL } from "url";
 import { REST, Routes, SlashCommandBuilder } from "discord.js";
 import logger from "@core/logger";
 import { config } from "@core/config";
@@ -18,8 +17,7 @@ function collectCommandFiles(): string[] {
 
 async function loadCommand(filePath: string): Promise<LoadedCommand | null> {
     try {
-        const moduleUrl = pathToFileURL(filePath).href;
-        const imported = await import(moduleUrl);
+        const imported = await import(filePath);
         const command = (imported.default ?? imported) as Partial<LoadedCommand>;
 
         if (command && typeof command === "object" && command.data && command.execute) {
@@ -54,7 +52,7 @@ export async function deployCommands() {
         const commands = await gatherCommandPayloads();
         const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
 
-        await rest.put(Routes.applicationCommands(config.CLIENT_ID), { body: {} });
+        await rest.put(Routes.applicationCommands(config.CLIENT_ID), { body: [] });
         logger.info(`Deploying ${commands.length} commands to Discord...`);
         await rest.put(Routes.applicationCommands(config.CLIENT_ID), { body: commands });
         logger.info(`Successfully deployed ${commands.length} commands.`);

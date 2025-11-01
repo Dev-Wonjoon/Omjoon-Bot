@@ -133,7 +133,7 @@ export class MusicManager {
             const videoId = url.searchParams.get("v") || lastTrack.info.identifier;
             if (!videoId) return;
 
-            const mixUrl = `https://www.youtube.com/watch?v=${videoId}&list=RD{videoId}`;
+            const mixUrl = `https://www.youtube.com/watch?v=${videoId}&list=RD${videoId}`;
             const response = await player.search(mixUrl, { requester: "Autoplay" });
             logger.debug(
                 `[${player.guildId}] Autoplay search: loadType=${response.loadType}, tracks=${response.tracks.length}`
