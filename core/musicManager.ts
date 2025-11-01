@@ -12,14 +12,14 @@ export class MusicManager {
         this.manager = new LavalinkManager({
             nodes: [
                 {
-                id: "MainNode",
-                host: config.LAVALINK_HOST,
-                port: config.LAVALINK_PORT,
-                authorization: config.LAVALINK_PASSWORD,
-                secure: false,
-                retryDelay: 10e3,
-                retryAmount: 5,
-                closeOnError: true,
+                    id: "MainNode",
+                    host: config.LAVALINK_HOST,
+                    port: config.LAVALINK_PORT,
+                    authorization: config.LAVALINK_PASSWORD,
+                    secure: false,
+                    retryDelay: 10e3,
+                    retryAmount: 5,
+                    closeOnError: true,
                 } as LavalinkNodeOptions
             ],
             sendToShard: (guildId, payload) => {
@@ -50,7 +50,7 @@ export class MusicManager {
     }
 
     public static getInstance(client: Client): MusicManager {
-        if(!this.instance) {
+        if (!this.instance) {
             this.instance = new MusicManager(client);
             logger.info("MusicManager created.");
         }
@@ -72,10 +72,10 @@ export class MusicManager {
         });
         logger.info("LavalinkManager Initialized");
     }
-    
+
     private registerEvents(): void {
         this.manager.on("trackStart", (player: Player, track: Track | null) => {
-            if(!track) {
+            if (!track) {
                 logger.warn(`[${player.guildId}] Received null track on start`);
                 return
             }
@@ -101,48 +101,65 @@ export class MusicManager {
 
     async play(guildId: string, query: string): Promise<void> {
         const player = this.manager.players.get(guildId);
-        if(!player) throw new Error("Player not Found");
+        if (!player) throw new Error("Player not Found");
 
         const response = await player.search(query, { requester: guildId });
-        if(!response.tracks.length) {
+        if (!response.tracks.length) {
             logger.info(`[${guildId}] No tracks found`);
             return;
         }
         player.queue.add(response.tracks[0]);
-        if(!player.playing) await player.play();
+        if (!player.playing) await player.play();
     }
 
     async leave(guildId: string): Promise<void> {
         const player = this.manager.players.get(guildId);
-        if(player) {
+        if (player) {
             await player.destroy();
             logger.info(`[${guildId}] Left voice channel.`);
         }
     }
-    
+
     static async autoPlayFunction(
         player: Player,
         lastTrack: Track,
     ): Promise<void> {
         try {
-            if(!lastTrack?.info.uri) return;
-            const url = new URL(lastTrack.info.uri);
-            const videoId = url.searchParams.get("v");
-            if(!videoId) return;
+            if (!MusicManager.instance?.getAutoPlay(player.guildId)) return;
 
-            const relatedQuery = `https://www.youtube.com/watch?v=${videoId}$list=RD${videoId}`;
-            const response = await player.search(relatedQuery, { requester: "Autoplay" });
+            const uri = lastTrack?.info.uri;
+            if (!uri) return;
+            const url = new URL(uri);
+            const videoId = url.searchParams.get("v") || lastTrack.info.identifier;
+            if (!videoId) return;
 
-            if(!response.tracks.length) {
+            const mixUrl = `https://www.youtube.com/watch?v=${videoId}&list=RD{videoId}`;
+            const response = await player.search(mixUrl, { requester: "Autoplay" });
+            logger.debug(
+                `[${player.guildId}] Autoplay search: loadType=${response.loadType}, tracks=${response.tracks.length}`
+            );
+
+            let next = response.tracks.find(t => t.info.identifier !== videoId) ??
+                null;
+
+            if (!next) {
+                const q = `${lastTrack.info.author ?? ""} ${lastTrack.info.title ?? ""}`.trim();
+                if (!q) return;
+
+                const fallback = await player.search(`ytsearch:${q}`, { requester: "Autoplay" });
+                logger.debug(
+                    `[${player.guildId}] Fallback search: loadType=${fallback.loadType}, tracks=${fallback.tracks.length}`
+                );
+                next = fallback.tracks.find(t => t.info.identifier !== videoId) ?? null;
+            }
+
+            if (!next) {
                 logger.info(`[${player.guildId}] No related tracks found for autoplay`);
                 return;
             }
 
-            const next = response.tracks.find((t) => t.info.identifier !== videoId);
-            if(!next) return;
-
             player.queue.add(next);
-            await player.play();
+            if (!player.playing) await player.play();
             logger.info(`[${player.guildId}] Autoplay: ${next.info.title}`);
         } catch(error) {
             logger.error(`[${player.guildId}] Autoplay error: `, error);

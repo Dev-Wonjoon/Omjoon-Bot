@@ -1,6 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { MusicManager } from "@core/musicManager";
-import { Player } from "lavalink-client";
 import logger from "@core/logger";
 
 export const data = new SlashCommandBuilder()
